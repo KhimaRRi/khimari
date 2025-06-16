@@ -86,59 +86,258 @@
   .tg-button:hover {
     opacity: 0.9;
   }
-  /* --- Мобильная адаптация --- */
-  @media (max-width: 600px) {
-    .container, .max-w-md, .mx-auto {
-      max-width: 100vw !important;
-      padding: 0.5rem !important;
+
+  /* Стили для мобильных устройств */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0.5rem;
     }
-    h1, h2, h3 {
-      font-size: 1.1rem !important;
-      text-align: center;
+    .desktop-only {
+      display: none !important;
     }
-    table {
-      font-size: 0.85rem !important;
+    .mobile-only {
+      display: block !important;
     }
-    th, td {
-      padding: 0.3rem !important;
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    input, select, button {
-      font-size: 1rem !important;
-      padding: 0.7rem !important;
+    .table-container table {
+      min-width: 100%;
+      font-size: 0.9rem;
     }
-    .flex, .gap-2, .gap-4 {
-      flex-direction: column !important;
-      gap: 0.5rem !important;
+    .table-container th,
+    .table-container td {
+      padding: 0.5rem;
+      white-space: nowrap;
     }
-    .overflow-x-auto {
-      overflow-x: auto !important;
+    .form-group {
+      margin-bottom: 1rem;
     }
-    .rounded, .rounded-lg {
-      border-radius: 0.5rem !important;
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
     }
-    .p-2, .p-3, .p-4 {
-      padding: 0.5rem !important;
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
-    .mb-2, .mb-4, .mb-6 {
-      margin-bottom: 0.7rem !important;
-    }
-    .w-full, .w-1\/2, .flex-1 {
-      width: 100% !important;
-    }
-    .min-w-\[400px\], .min-w-\[120px\], .min-w-\[150px\] {
-      min-width: 220px !important;
-    }
-    .max-w-\[200px\], .max-w-\[300px\] {
-      max-width: 90vw !important;
+    .button-group button {
+      width: 100%;
     }
   }
-  /* --- Десктоп --- */
-  @media (min-width: 601px) {
-    .container, .max-w-md, .mx-auto {
-      max-width: 600px !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
+
+  /* Стили для десктопа (из Untitled-1curs.html) */
+  @media (min-width: 769px) {
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
     }
+    .mobile-only {
+      display: none !important;
+    }
+    .desktop-only {
+      display: block !important;
+    }
+    .mb-6 {
+      margin-bottom: 1.5rem;
+    }
+    .p-4 {
+      padding: 1rem;
+    }
+    .border {
+      border: 1px solid #e5e7eb;
+    }
+    .rounded {
+      border-radius: 0.375rem;
+    }
+    .text-2xl {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+    .text-xl {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+    .font-bold {
+      font-weight: 700;
+    }
+    .font-semibold {
+      font-weight: 600;
+    }
+    .text-blue-600 {
+      color: #2563eb;
+    }
+    .text-gray-500 {
+      color: #6b7280;
+    }
+    .bg-gray-100 {
+      background-color: #f3f4f6;
+    }
+    .hover\:bg-gray-50:hover {
+      background-color: #f9fafb;
+    }
+    .hover\:bg-blue-100:hover {
+      background-color: #dbeafe;
+    }
+    .hover\:bg-yellow-600:hover {
+      background-color: #d97706;
+    }
+    .hover\:bg-red-600:hover {
+      background-color: #dc2626;
+    }
+    .hover\:bg-gray-600:hover {
+      background-color: #4b5563;
+    }
+    .hover\:bg-green-600:hover {
+      background-color: #16a34a;
+    }
+    .border-b-2 {
+      border-bottom-width: 2px;
+    }
+    .border-blue-500 {
+      border-color: #3b82f6;
+    }
+    .space-x-4 > * + * {
+      margin-left: 1rem;
+    }
+    .gap-4 {
+      gap: 1rem;
+    }
+    .gap-2 {
+      gap: 0.5rem;
+    }
+    .flex-1 {
+      flex: 1 1 0%;
+    }
+    .min-w-\[150px\] {
+      min-width: 150px;
+    }
+    .max-w-\[300px\] {
+      max-width: 300px;
+    }
+    .shadow-lg {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .rounded-lg {
+      border-radius: 0.5rem;
+    }
+    .text-sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    .text-xs {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+    .text-gray-600 {
+      color: #4b5563;
+    }
+    .bg-yellow-500 {
+      background-color: #eab308;
+    }
+    .bg-red-500 {
+      background-color: #ef4444;
+    }
+    .bg-green-500 {
+      background-color: #22c55e;
+    }
+    .bg-gray-500 {
+      background-color: #6b7280;
+    }
+    .text-white {
+      color: #ffffff;
+    }
+    .p-1 {
+      padding: 0.25rem;
+    }
+    .p-2 {
+      padding: 0.5rem;
+    }
+    .py-2 {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .px-4 {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    .mb-2 {
+      margin-bottom: 0.5rem;
+    }
+    .mb-4 {
+      margin-bottom: 1rem;
+    }
+    .mt-2 {
+      margin-top: 0.5rem;
+    }
+    .list-disc {
+      list-style-type: disc;
+    }
+    .pl-5 {
+      padding-left: 1.25rem;
+    }
+    .items-center {
+      align-items: center;
+    }
+    .justify-between {
+      justify-content: space-between;
+    }
+    .justify-center {
+      justify-content: center;
+    }
+    .border-collapse {
+      border-collapse: collapse;
+    }
+    .sticky {
+      position: sticky;
+    }
+    .left-0 {
+      left: 0;
+    }
+    .bg-white {
+      background-color: #ffffff;
+    }
+    .cursor-pointer {
+      cursor: pointer;
+    }
+    .cursor-not-allowed {
+      cursor: not-allowed;
+    }
+  }
+
+  /* Общие стили для обоих устройств */
+  .card {
+    background: var(--tg-theme-bg-color, #ffffff);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .card-header {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: var(--tg-theme-text-color, #000000);
+  }
+  .alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+  .alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+  }
+  .alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
   }
 </style>
 </head>
@@ -201,6 +400,7 @@ function App() {
   const [newResource, setNewResource] = useState({ name: '', description: '' });
   const [newPermission, setNewPermission] = useState({ name: '', description: '' });
   const [activeTab, setActiveTab] = useState('users');
+  const [isMobile, setIsMobile] = useState(false);
 
   // Toggle conflict in role matrix
   const toggleRoleConflict = (rowRole, colRole) => {
@@ -408,37 +608,46 @@ function App() {
     if (tg.ready) {
       tg.ready();
     }
+
+    // Определяем платформу через Telegram WebApp API
+    if (window.Telegram?.WebApp) {
+      const platform = window.Telegram.WebApp.platform;
+      setIsMobile(platform === 'android' || platform === 'ios');
+    } else {
+      // Если не в Telegram, используем медиа-запрос
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    }
   }, []);
 
   return (
-    <div className="max-w-md mx-auto p-2 sm:p-4">
-      <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4 text-center">Управление доступом к ресурсам</h1>
+    <div className={`container ${isMobile ? 'mobile' : 'desktop'}`}>
+      <h1 className="text-2xl font-bold mb-4">Управление доступом к ресурсам</h1>
 
       {/* Tab Navigation */}
-      <div className="mb-4 border-b sticky top-0 bg-[var(--tg-theme-bg-color,#111)] z-10">
-        <div className="flex space-x-2">
+      <div className="mb-6 border-b">
+        <div className={`flex ${isMobile ? 'flex-col' : 'space-x-4'}`}>
           <button
-            className={`flex-1 py-2 px-1 sm:px-4 rounded-t-lg text-sm sm:text-base ${activeTab === 'users' ? 'border-b-2 border-blue-500 text-blue-600 bg-white dark:bg-[#222]' : 'text-gray-500 bg-transparent'}`}
+            className={`py-2 px-4 ${activeTab === 'users' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
             onClick={() => setActiveTab('users')}
           >
-            Пользователи
+            {isMobile ? '👥 Пользователи' : 'Пользователи'}
           </button>
           <button
-            className={`flex-1 py-2 px-1 sm:px-4 rounded-t-lg text-sm sm:text-base ${activeTab === 'roles' ? 'border-b-2 border-blue-500 text-blue-600 bg-white dark:bg-[#222]' : 'text-gray-500 bg-transparent'}`}
+            className={`py-2 px-4 ${activeTab === 'roles' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
             onClick={() => setActiveTab('roles')}
           >
-            Роли и ресурсы
+            {isMobile ? '🔑 Роли и ресурсы' : 'Роли и ресурсы'}
           </button>
         </div>
       </div>
 
       {/* Users Tab Content */}
       {activeTab === 'users' && (
-        <>
+        <div className={isMobile ? 'mobile-view' : 'desktop-view'}>
           {/* SoD Warnings */}
           {sodWarnings.length > 0 && (
-            <div className="mb-4 p-2 bg-red-100 border border-red-400 rounded text-xs">
-              <h3 className="font-semibold text-red-700">Обнаружены конфликты SoD:</h3>
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 rounded">
+              <h3 className="text-lg font-semibold text-red-700">Обнаружены конфликты SoD:</h3>
               <ul className="list-disc pl-5">
                 {sodWarnings.map((warning, index) => (
                   <li key={index} className="text-red-700">{warning}</li>
@@ -448,15 +657,15 @@ function App() {
           )}
 
           {/* Форма добавления/редактирования пользователя */}
-          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
-            <h2 className="text-lg font-semibold mb-2 text-center">
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">
               {editingUser ? 'Редактировать пользователя' : 'Добавить пользователя'}
             </h2>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               <input
                 type="text"
                 placeholder="Имя пользователя"
-                className="border p-3 rounded w-full text-base"
+                className="border p-2 rounded"
                 value={editingUser ? editingUser.name : newUser.name}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -466,7 +675,7 @@ function App() {
                 }}
               />
               <select
-                className="border p-3 rounded w-full text-base"
+                className="border p-2 rounded"
                 value={editingUser ? editingUser.role : newUser.role}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -481,9 +690,9 @@ function App() {
                 ))}
               </select>
               <div>
-                <h3 className="font-semibold text-sm">Доступ к ресурсам:</h3>
+                <h3 className="font-semibold">Доступ к ресурсам:</h3>
                 {resources.map(resource => (
-                  <div key={resource.id} className="flex items-center gap-2 text-sm">
+                  <div key={resource.id} className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={(editingUser ? editingUser.resources : newUser.resources).includes(resource.id)}
@@ -494,14 +703,14 @@ function App() {
                 ))}
               </div>
               <button
-                className="tg-button w-full p-3 rounded text-base"
+                className="tg-button p-2 rounded"
                 onClick={editingUser ? updateUser : addUser}
               >
                 {editingUser ? 'Сохранить изменения' : 'Добавить пользователя'}
               </button>
               {editingUser && (
                 <button
-                  className="bg-gray-500 text-white w-full p-3 rounded hover:bg-gray-600 text-base"
+                  className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
                   onClick={() => { setEditingUser(null); setSodWarnings([]); }}
                 >
                   Отмена
@@ -511,57 +720,57 @@ function App() {
           </div>
 
           {/* Список пользователей */}
-          <div className="grid gap-2">
+          <div className="grid gap-4">
             {users.map(user => (
-              <div key={user.id} className="p-2 border rounded flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#222]">
-                <div className="mb-2 sm:mb-0">
-                  <h3 className="font-semibold text-base">{user.name}</h3>
-                  <p className="text-sm">Роль: {user.role}</p>
-                  <p className="text-sm">Ресурсы: {user.resources.map(id => 
+              <div key={user.id} className="p-4 border rounded flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold">{user.name}</h3>
+                  <p>Роль: {user.role}</p>
+                  <p>Ресурсы: {user.resources.map(id => 
                     resources.find(r => r.id === id)?.name || 'Удаленный ресурс').join(', ') || 'Нет доступа'}</p>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-2">
                   <button
-                    className="bg-yellow-500 text-white w-1/2 sm:w-auto p-2 rounded hover:bg-yellow-600 text-sm"
+                    className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
                     onClick={() => setEditingUser(user)}
                   >
-                    Редактировать
+                    {isMobile ? '✏️' : 'Редактировать'}
                   </button>
                   <button
-                    className="bg-red-500 text-white w-1/2 sm:w-auto p-2 rounded hover:bg-red-600 text-sm"
+                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
                     onClick={() => deleteUser(user.id)}
                   >
-                    Удалить
+                    {isMobile ? '🗑️' : 'Удалить'}
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {/* Roles and Resources Tab Content */}
       {activeTab === 'roles' && (
-        <>
+        <div className={isMobile ? 'mobile-view' : 'desktop-view'}>
           {/* Cat Image */}
-          <div className="mb-4 p-2 border rounded flex justify-center bg-white dark:bg-[#222]">
+          <div className="mb-6 p-4 border rounded flex justify-center">
             <img 
               src="https://cataas.com/cat" 
               alt="Котик" 
-              className="max-w-[200px] rounded-lg shadow-lg"
+              className="max-w-[300px] rounded-lg shadow-lg"
             />
           </div>
 
           {/* Role-Permissions Matrix */}
-          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
-            <h2 className="text-lg font-semibold mb-2 text-center">Матрица полномочий ролей</h2>
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">Матрица полномочий ролей</h2>
             <div className="overflow-x-auto">
-              <table className="min-w-[400px] w-full text-xs sm:text-sm border-collapse">
+              <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="border p-2 sticky left-0 bg-gray-100">Роль</th>
                     {permissions.map(permission => (
-                      <th key={permission.id} className="border p-2 min-w-[120px]">
+                      <th key={permission.id} className="border p-2 min-w-[150px]">
                         <div className="font-semibold">{permission.name}</div>
                         <div className="text-xs text-gray-600">{permission.description}</div>
                       </th>
@@ -571,7 +780,7 @@ function App() {
                 <tbody>
                   {roles.map(role => (
                     <tr key={role} className="hover:bg-gray-50">
-                      <td className="border p-2 font-semibold sticky left-0 bg-white dark:bg-[#222]">{role}</td>
+                      <td className="border p-2 font-semibold sticky left-0 bg-white">{role}</td>
                       {permissions.map(permission => (
                         <td
                           key={permission.id}
@@ -588,30 +797,30 @@ function App() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-xs text-gray-600">Кликните на ячейку, чтобы добавить или убрать полномочие для роли.</p>
+            <p className="mt-2 text-sm text-gray-600">Кликните на ячейку, чтобы добавить или убрать полномочие для роли.</p>
           </div>
 
           {/* Role Conflict Matrix */}
-          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
-            <h2 className="text-lg font-semibold mb-2 text-center">Матрица конфликтов ролей (SoD)</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-[400px] w-full text-xs sm:text-sm border-collapse">
+          <div className="card">
+            <div className="card-header">Матрица конфликтов ролей (SoD)</div>
+            <div className="table-container">
+              <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2"></th>
+                  <tr>
+                    <th className="sticky left-0 bg-gray-100">Роль</th>
                     {roles.map(role => (
-                      <th key={role} className="border p-2">{role}</th>
+                      <th key={role} className="sticky left-0 bg-gray-100">{role}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {roles.map(rowRole => (
-                    <tr key={rowRole} className="hover:bg-gray-50">
-                      <td className="border p-2 font-semibold">{rowRole}</td>
+                    <tr key={rowRole}>
+                      <td className="sticky left-0 bg-white">{rowRole}</td>
                       {roles.map(colRole => (
                         <td
                           key={colRole}
-                          className={`border p-2 text-center ${rowRole === colRole ? 'bg-gray-200 cursor-not-allowed' : 'cursor-pointer hover:bg-blue-100'}`}
+                          className={`text-center cursor-pointer hover:bg-blue-100 ${rowRole === colRole ? 'bg-gray-200 cursor-not-allowed' : ''}`}
                           onClick={() => toggleRoleConflict(rowRole, colRole)}
                         >
                           {roleConflictMatrix[rowRole]?.[colRole] || ''}
@@ -622,122 +831,88 @@ function App() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-xs text-gray-600">Кликните на ячейку, чтобы добавить или убрать конфликт ("+"). Диагональные ячейки заблокированы.</p>
           </div>
 
           {/* Форма управления ролями */}
-          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
-            <h2 className="text-lg font-semibold mb-2 text-center">Управление ролями</h2>
-            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
+          <div className="card">
+            <div className="card-header">Управление ролями</div>
+            <div className="form-group">
               <input
                 type="text"
                 placeholder="Название новой роли"
-                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                className="border p-2 rounded w-full"
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
               />
+            </div>
+            <div className="button-group">
               <button
-                className="bg-green-500 text-white p-3 rounded text-base flex-1 sm:flex-none"
+                className="bg-green-500 text-white p-2 rounded"
                 onClick={addRole}
               >
                 Добавить роль
               </button>
             </div>
-            <div className="grid gap-2">
-              {roles.map(role => (
-                <div key={role} className="flex justify-between items-center p-2 border rounded">
-                  <span>{role}</span>
-                  <button
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 text-sm"
-                    onClick={() => deleteRole(role)}
-                  >
-                    Удалить
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Форма управления полномочиями */}
-          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
-            <h2 className="text-lg font-semibold mb-2 text-center">Управление полномочиями</h2>
-            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
+          <div className="card">
+            <div className="card-header">Управление полномочиями</div>
+            <div className="form-group">
               <input
                 type="text"
                 placeholder="Название полномочия"
-                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                className="border p-2 rounded w-full"
                 value={newPermission.name}
                 onChange={(e) => setNewPermission({ ...newPermission, name: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Описание полномочия"
-                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                className="border p-2 rounded w-full"
                 value={newPermission.description}
                 onChange={(e) => setNewPermission({ ...newPermission, description: e.target.value })}
               />
+            </div>
+            <div className="button-group">
               <button
-                className="bg-green-500 text-white p-3 rounded text-base flex-1 sm:flex-none"
+                className="bg-green-500 text-white p-2 rounded"
                 onClick={addPermission}
               >
                 Добавить полномочие
               </button>
             </div>
-            <div className="grid gap-2">
-              {permissions.map(permission => (
-                <div key={permission.id} className="flex justify-between items-center p-2 border rounded">
-                  <span>{permission.name} - {permission.description}</span>
-                  <button
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 text-sm"
-                    onClick={() => deletePermission(permission.id)}
-                  >
-                    Удалить
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Форма управления ресурсами */}
-          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
-            <h2 className="text-lg font-semibold mb-2 text-center">Управление ресурсами</h2>
-            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
+          <div className="card">
+            <div className="card-header">Управление ресурсами</div>
+            <div className="form-group">
               <input
                 type="text"
                 placeholder="Название ресурса"
-                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                className="border p-2 rounded w-full"
                 value={newResource.name}
                 onChange={(e) => setNewResource({ ...newResource, name: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Описание ресурса"
-                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                className="border p-2 rounded w-full"
                 value={newResource.description}
                 onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
               />
+            </div>
+            <div className="button-group">
               <button
-                className="bg-green-500 text-white p-3 rounded text-base flex-1 sm:flex-none"
+                className="bg-green-500 text-white p-2 rounded"
                 onClick={addResource}
               >
                 Добавить ресурс
               </button>
             </div>
-            <div className="grid gap-2">
-              {resources.map(resource => (
-                <div key={resource.id} className="flex justify-between items-center p-2 border rounded">
-                  <span>{resource.name} - {resource.description}</span>
-                  <button
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 text-sm"
-                    onClick={() => deleteResource(resource.id)}
-                  >
-                    Удалить
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
