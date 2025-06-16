@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Управление доступом</title>
+<script>
+  // Script loading verification
+  function checkScriptLoading() {
+    const scripts = [
+      'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js',
+      'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js',
+      'https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js',
+      'https://cdn.tailwindcss.com',
+      'https://telegram.org/js/telegram-web-app.js'
+    ];
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '0';
+    errorDiv.style.left = '0';
+    errorDiv.style.right = '0';
+    errorDiv.style.padding = '10px';
+    errorDiv.style.backgroundColor = 'red';
+    errorDiv.style.color = 'white';
+    errorDiv.style.zIndex = '9999';
+    
+    let errors = [];
+    
+    scripts.forEach(src => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onerror = () => {
+        errors.push(`Failed to load: ${src}`);
+        errorDiv.innerHTML = errors.join('<br>');
+        document.body.appendChild(errorDiv);
+      };
+      document.head.appendChild(script);
+    });
+  }
+  
+  window.addEventListener('load', checkScriptLoading);
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+<script defer src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  // Debug code
+  window.addEventListener('load', function() {
+    console.log('Window loaded');
+    console.log('Telegram WebApp:', window.Telegram?.WebApp);
+    if (window.Telegram?.WebApp) {
+      console.log('WebApp version:', window.Telegram.WebApp.version);
+      console.log('WebApp platform:', window.Telegram.WebApp.platform);
+      console.log('WebApp colorScheme:', window.Telegram.WebApp.colorScheme);
+    }
+  });
+
+  // Error handling
+  window.onerror = function(msg, url, lineNo, columnNo, error) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '0';
+    errorDiv.style.left = '0';
+    errorDiv.style.right = '0';
+    errorDiv.style.padding = '10px';
+    errorDiv.style.backgroundColor = 'red';
+    errorDiv.style.color = 'white';
+    errorDiv.style.zIndex = '9999';
+    errorDiv.innerHTML = `Error: ${msg}<br>Line: ${lineNo}<br>Column: ${columnNo}<br>URL: ${url}`;
+    document.body.appendChild(errorDiv);
+    return false;
+  };
+</script>
+<style>
+  body {
+    background-color: var(--tg-theme-bg-color, #ffffff);
+    color: var(--tg-theme-text-color, #000000);
+  }
+  .tg-button {
+    background-color: var(--tg-theme-button-color, #2481cc);
+    color: var(--tg-theme-button-text-color, #ffffff);
+  }
+  .tg-button:hover {
+    opacity: 0.9;
+  }
+  /* --- Мобильная адаптация --- */
+  @media (max-width: 600px) {
+    .container, .max-w-md, .mx-auto {
+      max-width: 100vw !important;
+      padding: 0.5rem !important;
+    }
+    h1, h2, h3 {
+      font-size: 1.1rem !important;
+      text-align: center;
+    }
+    table {
+      font-size: 0.85rem !important;
+    }
+    th, td {
+      padding: 0.3rem !important;
+    }
+    input, select, button {
+      font-size: 1rem !important;
+      padding: 0.7rem !important;
+    }
+    .flex, .gap-2, .gap-4 {
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+    }
+    .overflow-x-auto {
+      overflow-x: auto !important;
+    }
+    .rounded, .rounded-lg {
+      border-radius: 0.5rem !important;
+    }
+    .p-2, .p-3, .p-4 {
+      padding: 0.5rem !important;
+    }
+    .mb-2, .mb-4, .mb-6 {
+      margin-bottom: 0.7rem !important;
+    }
+    .w-full, .w-1\/2, .flex-1 {
+      width: 100% !important;
+    }
+    .min-w-\[400px\], .min-w-\[120px\], .min-w-\[150px\] {
+      min-width: 220px !important;
+    }
+    .max-w-\[200px\], .max-w-\[300px\] {
+      max-width: 90vw !important;
+    }
+  }
+  /* --- Десктоп --- */
+  @media (min-width: 601px) {
+    .container, .max-w-md, .mx-auto {
+      max-width: 600px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// Initialize Telegram WebApp
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const initialResources = [
+  { id: 1, name: 'База данных клиентов', description: 'Доступ к информации о клиентах' },
+  { id: 2, name: 'Финансовые отчеты', description: 'Доступ к финансовой аналитике' },
+  { id: 3, name: 'Админ-панель', description: 'Полный административный доступ' },
+];
+
+const initialRoles = ['Администратор', 'Менеджер', 'Аналитик', 'Гость'];
+
+// Initial permissions
+const initialPermissions = [
+  { id: 1, name: 'Чтение', description: 'Просмотр данных' },
+  { id: 2, name: 'Запись', description: 'Изменение данных' },
+  { id: 3, name: 'Удаление', description: 'Удаление данных' },
+  { id: 4, name: 'Администрирование', description: 'Управление системой' },
+];
+
+// Initial role permissions matrix
+const initialRolePermissions = {
+  'Администратор': [1, 2, 3, 4],
+  'Менеджер': [1, 2],
+  'Аналитик': [1],
+  'Гость': [1],
+};
+
+// Initial SoD conflict matrix for roles
+const initialRoleConflictMatrix = {
+  'Администратор': { 'Аналитик': '+' },
+  'Менеджер': { 'Гость': '+' },
+  'Аналитик': { 'Администратор': '+' },
+  'Гость': { 'Менеджер': '+' },
+};
+
+function App() {
+  const [users, setUsers] = useState([
+    { id: 1, name: 'Иван Иванов', role: 'Администратор', resources: [1, 2, 3] },
+    { id: 2, name: 'Мария Петрова', role: 'Менеджер', resources: [1, 2] },
+    { id: 3, name: 'Алексей Сидоров', role: 'Аналитик', resources: [2] },
+  ]);
+  const [newUser, setNewUser] = useState({ name: '', role: '', resources: [] });
+  const [editingUser, setEditingUser] = useState(null);
+  const [sodWarnings, setSodWarnings] = useState([]);
+  const [roleConflictMatrix, setRoleConflictMatrix] = useState(initialRoleConflictMatrix);
+  const [roles, setRoles] = useState(initialRoles);
+  const [resources, setResources] = useState(initialResources);
+  const [permissions, setPermissions] = useState(initialPermissions);
+  const [rolePermissions, setRolePermissions] = useState(initialRolePermissions);
+  const [newRole, setNewRole] = useState('');
+  const [newResource, setNewResource] = useState({ name: '', description: '' });
+  const [newPermission, setNewPermission] = useState({ name: '', description: '' });
+  const [activeTab, setActiveTab] = useState('users');
+
+  // Toggle conflict in role matrix
+  const toggleRoleConflict = (rowRole, colRole) => {
+    if (rowRole === colRole) return;
+    setRoleConflictMatrix(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      if (!newMatrix[rowRole]) newMatrix[rowRole] = {};
+      if (!newMatrix[colRole]) newMatrix[colRole] = {};
+      
+      if (newMatrix[rowRole][colRole] === '+') {
+        delete newMatrix[rowRole][colRole];
+        delete newMatrix[colRole][rowRole];
+      } else {
+        newMatrix[rowRole][colRole] = '+';
+        newMatrix[colRole][rowRole] = '+';
+      }
+      return newMatrix;
+    });
+  };
+
+  // Toggle permission for role
+  const toggleRolePermission = (role, permissionId) => {
+    setRolePermissions(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      if (!newMatrix[role]) {
+        newMatrix[role] = [];
+      }
+      
+      const permissionIndex = newMatrix[role].indexOf(permissionId);
+      if (permissionIndex === -1) {
+        newMatrix[role] = [...newMatrix[role], permissionId];
+      } else {
+        newMatrix[role] = newMatrix[role].filter(id => id !== permissionId);
+      }
+      return newMatrix;
+    });
+  };
+
+  // Add new role
+  const addRole = () => {
+    if (newRole && !roles.includes(newRole)) {
+      setRoles([...roles, newRole]);
+      setRoleConflictMatrix(prevMatrix => ({
+        ...prevMatrix,
+        [newRole]: {},
+      }));
+      setRolePermissions(prevMatrix => ({
+        ...prevMatrix,
+        [newRole]: [],
+      }));
+      setNewRole('');
+    }
+  };
+
+  // Delete role
+  const deleteRole = (role) => {
+    if (users.some(user => user.role === role)) {
+      alert('Нельзя удалить роль, которая назначена пользователю');
+      return;
+    }
+    setRoles(roles.filter(r => r !== role));
+    setRoleConflictMatrix(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      delete newMatrix[role];
+      Object.keys(newMatrix).forEach(r => delete newMatrix[r][role]);
+      return newMatrix;
+    });
+    setRolePermissions(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      delete newMatrix[role];
+      return newMatrix;
+    });
+  };
+
+  // Add new resource
+  const addResource = () => {
+    if (newResource.name && newResource.description) {
+      const newId = resources.length ? Math.max(...resources.map(r => r.id)) + 1 : 1;
+      setResources([...resources, { id: newId, ...newResource }]);
+      setNewResource({ name: '', description: '' });
+    }
+  };
+
+  // Delete resource
+  const deleteResource = (id) => {
+    if (users.some(user => user.resources.includes(id))) {
+      alert('Нельзя удалить ресурс, который назначен пользователю');
+      return;
+    }
+    setResources(resources.filter(r => r.id !== id));
+  };
+
+  // Add new permission
+  const addPermission = () => {
+    if (newPermission.name && newPermission.description) {
+      const newId = permissions.length ? Math.max(...permissions.map(p => p.id)) + 1 : 1;
+      setPermissions([...permissions, { id: newId, ...newPermission }]);
+      setNewPermission({ name: '', description: '' });
+    }
+  };
+
+  // Delete permission
+  const deletePermission = (id) => {
+    setPermissions(permissions.filter(p => p.id !== id));
+  };
+
+  // Check for SoD conflicts
+  const checkSodConflicts = (user) => {
+    const warnings = [];
+    users.forEach(existingUser => {
+      if (existingUser.id !== (editingUser?.id || user.id) && roleConflictMatrix[user.role]?.[existingUser.role] === '+') {
+        warnings.push(`Конфликт ролей: ${user.role} несовместим с ${existingUser.role} у другого пользователя`);
+      }
+    });
+    return warnings;
+  };
+
+  const addUser = () => {
+    if (newUser.name && newUser.role) {
+      const warnings = checkSodConflicts(newUser);
+      if (warnings.length > 0) {
+        setSodWarnings(warnings);
+        return;
+      }
+      const updatedUsers = [...users, { id: users.length + 1, ...newUser }];
+      setUsers(updatedUsers);
+      setNewUser({ name: '', role: '', resources: [] });
+      setSodWarnings([]);
+      
+      // Send updated users to Telegram
+      if (tg.sendData) {
+        tg.sendData(JSON.stringify({
+          type: 'users_update',
+          data: updatedUsers
+        }));
+      }
+    }
+  };
+
+  const updateUser = () => {
+    const warnings = checkSodConflicts(editingUser);
+    if (warnings.length > 0) {
+      setSodWarnings(warnings);
+      return;
+    }
+    const updatedUsers = users.map(user => user.id === editingUser.id ? editingUser : user);
+    setUsers(updatedUsers);
+    setEditingUser(null);
+    setSodWarnings([]);
+    
+    // Send updated users to Telegram
+    if (tg.sendData) {
+      tg.sendData(JSON.stringify({
+        type: 'users_update',
+        data: updatedUsers
+      }));
+    }
+  };
+
+  const deleteUser = (id) => {
+    const updatedUsers = users.filter(user => user.id !== id);
+    setUsers(updatedUsers);
+    
+    // Send updated users to Telegram
+    if (tg.sendData) {
+      tg.sendData(JSON.stringify({
+        type: 'users_update',
+        data: updatedUsers
+      }));
+    }
+  };
+
+  const handleResourceToggle = (resourceId, isEditing = false) => {
+    const target = isEditing ? editingUser : newUser;
+    const setTarget = isEditing ? setEditingUser : setNewUser;
+    const updatedResources = target.resources.includes(resourceId)
+      ? target.resources.filter(id => id !== resourceId)
+      : [...target.resources, resourceId];
+    setTarget({ ...target, resources: updatedResources });
+  };
+
+  // Add Telegram WebApp event listeners
+  useEffect(() => {
+    if (tg.onEvent) {
+      tg.onEvent('viewportChanged', () => {
+        tg.expand();
+      });
+
+      // Handle data from Telegram
+      tg.onEvent('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'init_data') {
+            if (data.users) setUsers(data.users);
+            if (data.roles) setRoles(data.roles);
+            if (data.resources) setResources(data.resources);
+          }
+        } catch (e) {
+          console.error('Error parsing Telegram data:', e);
+        }
+      });
+    }
+
+    // Send ready signal to Telegram
+    if (tg.ready) {
+      tg.ready();
+    }
+  }, []);
+
+  return (
+    <div className="max-w-md mx-auto p-2 sm:p-4">
+      <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4 text-center">Управление доступом к ресурсам</h1>
+
+      {/* Tab Navigation */}
+      <div className="mb-4 border-b sticky top-0 bg-[var(--tg-theme-bg-color,#111)] z-10">
+        <div className="flex space-x-2">
+          <button
+            className={`flex-1 py-2 px-1 sm:px-4 rounded-t-lg text-sm sm:text-base ${activeTab === 'users' ? 'border-b-2 border-blue-500 text-blue-600 bg-white dark:bg-[#222]' : 'text-gray-500 bg-transparent'}`}
+            onClick={() => setActiveTab('users')}
+          >
+            Пользователи
+          </button>
+          <button
+            className={`flex-1 py-2 px-1 sm:px-4 rounded-t-lg text-sm sm:text-base ${activeTab === 'roles' ? 'border-b-2 border-blue-500 text-blue-600 bg-white dark:bg-[#222]' : 'text-gray-500 bg-transparent'}`}
+            onClick={() => setActiveTab('roles')}
+          >
+            Роли и ресурсы
+          </button>
+        </div>
+      </div>
+
+      {/* Users Tab Content */}
+      {activeTab === 'users' && (
+        <>
+          {/* SoD Warnings */}
+          {sodWarnings.length > 0 && (
+            <div className="mb-4 p-2 bg-red-100 border border-red-400 rounded text-xs">
+              <h3 className="font-semibold text-red-700">Обнаружены конфликты SoD:</h3>
+              <ul className="list-disc pl-5">
+                {sodWarnings.map((warning, index) => (
+                  <li key={index} className="text-red-700">{warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Форма добавления/редактирования пользователя */}
+          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
+            <h2 className="text-lg font-semibold mb-2 text-center">
+              {editingUser ? 'Редактировать пользователя' : 'Добавить пользователя'}
+            </h2>
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                placeholder="Имя пользователя"
+                className="border p-3 rounded w-full text-base"
+                value={editingUser ? editingUser.name : newUser.name}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  editingUser
+                    ? setEditingUser({ ...editingUser, name: value })
+                    : setNewUser({ ...newUser, name: value });
+                }}
+              />
+              <select
+                className="border p-3 rounded w-full text-base"
+                value={editingUser ? editingUser.role : newUser.role}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  editingUser
+                    ? setEditingUser({ ...editingUser, role: value })
+                    : setNewUser({ ...newUser, role: value });
+                }}
+              >
+                <option value="">Выберите роль</option>
+                {roles.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+              <div>
+                <h3 className="font-semibold text-sm">Доступ к ресурсам:</h3>
+                {resources.map(resource => (
+                  <div key={resource.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(editingUser ? editingUser.resources : newUser.resources).includes(resource.id)}
+                      onChange={() => handleResourceToggle(resource.id, !!editingUser)}
+                    />
+                    <span>{resource.name} - {resource.description}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="tg-button w-full p-3 rounded text-base"
+                onClick={editingUser ? updateUser : addUser}
+              >
+                {editingUser ? 'Сохранить изменения' : 'Добавить пользователя'}
+              </button>
+              {editingUser && (
+                <button
+                  className="bg-gray-500 text-white w-full p-3 rounded hover:bg-gray-600 text-base"
+                  onClick={() => { setEditingUser(null); setSodWarnings([]); }}
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Список пользователей */}
+          <div className="grid gap-2">
+            {users.map(user => (
+              <div key={user.id} className="p-2 border rounded flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#222]">
+                <div className="mb-2 sm:mb-0">
+                  <h3 className="font-semibold text-base">{user.name}</h3>
+                  <p className="text-sm">Роль: {user.role}</p>
+                  <p className="text-sm">Ресурсы: {user.resources.map(id => 
+                    resources.find(r => r.id === id)?.name || 'Удаленный ресурс').join(', ') || 'Нет доступа'}</p>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    className="bg-yellow-500 text-white w-1/2 sm:w-auto p-2 rounded hover:bg-yellow-600 text-sm"
+                    onClick={() => setEditingUser(user)}
+                  >
+                    Редактировать
+                  </button>
+                  <button
+                    className="bg-red-500 text-white w-1/2 sm:w-auto p-2 rounded hover:bg-red-600 text-sm"
+                    onClick={() => deleteUser(user.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Roles and Resources Tab Content */}
+      {activeTab === 'roles' && (
+        <>
+          {/* Cat Image */}
+          <div className="mb-4 p-2 border rounded flex justify-center bg-white dark:bg-[#222]">
+            <img 
+              src="https://cataas.com/cat" 
+              alt="Котик" 
+              className="max-w-[200px] rounded-lg shadow-lg"
+            />
+          </div>
+
+          {/* Role-Permissions Matrix */}
+          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
+            <h2 className="text-lg font-semibold mb-2 text-center">Матрица полномочий ролей</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-[400px] w-full text-xs sm:text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2 sticky left-0 bg-gray-100">Роль</th>
+                    {permissions.map(permission => (
+                      <th key={permission.id} className="border p-2 min-w-[120px]">
+                        <div className="font-semibold">{permission.name}</div>
+                        <div className="text-xs text-gray-600">{permission.description}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {roles.map(role => (
+                    <tr key={role} className="hover:bg-gray-50">
+                      <td className="border p-2 font-semibold sticky left-0 bg-white dark:bg-[#222]">{role}</td>
+                      {permissions.map(permission => (
+                        <td
+                          key={permission.id}
+                          className={`border p-2 text-center cursor-pointer hover:bg-blue-100 ${
+                            rolePermissions[role]?.includes(permission.id) ? 'bg-green-100' : ''
+                          }`}
+                          onClick={() => toggleRolePermission(role, permission.id)}
+                        >
+                          {rolePermissions[role]?.includes(permission.id) ? '✓' : ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2 text-xs text-gray-600">Кликните на ячейку, чтобы добавить или убрать полномочие для роли.</p>
+          </div>
+
+          {/* Role Conflict Matrix */}
+          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
+            <h2 className="text-lg font-semibold mb-2 text-center">Матрица конфликтов ролей (SoD)</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-[400px] w-full text-xs sm:text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2"></th>
+                    {roles.map(role => (
+                      <th key={role} className="border p-2">{role}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {roles.map(rowRole => (
+                    <tr key={rowRole} className="hover:bg-gray-50">
+                      <td className="border p-2 font-semibold">{rowRole}</td>
+                      {roles.map(colRole => (
+                        <td
+                          key={colRole}
+                          className={`border p-2 text-center ${rowRole === colRole ? 'bg-gray-200 cursor-not-allowed' : 'cursor-pointer hover:bg-blue-100'}`}
+                          onClick={() => toggleRoleConflict(rowRole, colRole)}
+                        >
+                          {roleConflictMatrix[rowRole]?.[colRole] || ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2 text-xs text-gray-600">Кликните на ячейку, чтобы добавить или убрать конфликт ("+"). Диагональные ячейки заблокированы.</p>
+          </div>
+
+          {/* Форма управления ролями */}
+          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
+            <h2 className="text-lg font-semibold mb-2 text-center">Управление ролями</h2>
+            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
+              <input
+                type="text"
+                placeholder="Название новой роли"
+                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+              />
+              <button
+                className="bg-green-500 text-white p-3 rounded text-base flex-1 sm:flex-none"
+                onClick={addRole}
+              >
+                Добавить роль
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {roles.map(role => (
+                <div key={role} className="flex justify-between items-center p-2 border rounded">
+                  <span>{role}</span>
+                  <button
+                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 text-sm"
+                    onClick={() => deleteRole(role)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Форма управления полномочиями */}
+          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
+            <h2 className="text-lg font-semibold mb-2 text-center">Управление полномочиями</h2>
+            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
+              <input
+                type="text"
+                placeholder="Название полномочия"
+                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                value={newPermission.name}
+                onChange={(e) => setNewPermission({ ...newPermission, name: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Описание полномочия"
+                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                value={newPermission.description}
+                onChange={(e) => setNewPermission({ ...newPermission, description: e.target.value })}
+              />
+              <button
+                className="bg-green-500 text-white p-3 rounded text-base flex-1 sm:flex-none"
+                onClick={addPermission}
+              >
+                Добавить полномочие
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {permissions.map(permission => (
+                <div key={permission.id} className="flex justify-between items-center p-2 border rounded">
+                  <span>{permission.name} - {permission.description}</span>
+                  <button
+                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 text-sm"
+                    onClick={() => deletePermission(permission.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Форма управления ресурсами */}
+          <div className="mb-4 p-2 border rounded bg-white dark:bg-[#222]">
+            <h2 className="text-lg font-semibold mb-2 text-center">Управление ресурсами</h2>
+            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
+              <input
+                type="text"
+                placeholder="Название ресурса"
+                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                value={newResource.name}
+                onChange={(e) => setNewResource({ ...newResource, name: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Описание ресурса"
+                className="border p-3 rounded flex-1 text-base mb-2 sm:mb-0"
+                value={newResource.description}
+                onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
+              />
+              <button
+                className="bg-green-500 text-white p-3 rounded text-base flex-1 sm:flex-none"
+                onClick={addResource}
+              >
+                Добавить ресурс
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {resources.map(resource => (
+                <div key={resource.id} className="flex justify-between items-center p-2 border rounded">
+                  <span>{resource.name} - {resource.description}</span>
+                  <button
+                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 text-sm"
+                    onClick={() => deleteResource(resource.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html> 
