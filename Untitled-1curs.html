@@ -1,0 +1,624 @@
+<script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+    if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+            var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+            var firstSheetName = workbook.SheetNames[0];
+            var worksheet = workbook.Sheets[firstSheetName];
+
+            // Convert sheet to JSON to filter blank rows
+            var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+            // Filter out blank rows (rows where all cells are empty, null, or undefined)
+            var filteredData = jsonData.filter(row => row.some(filledCell));
+
+            // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+            var headerRowIndex = filteredData.findIndex((row, index) =>
+              row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+            );
+            // Fallback
+            if (headerRowIndex === -1 || headerRowIndex > 25) {
+              headerRowIndex = 0;
+            }
+
+            // Convert filtered JSON back to CSV
+            var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+            csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+            return csv;
+        } catch (e) {
+            console.error(e);
+            return "";
+        }
+    }
+    return gk_fileData[filename] || "";
+    }
+    </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Управление доступом</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body {
+    background-color: var(--tg-theme-bg-color, #ffffff);
+    color: var(--tg-theme-text-color, #000000);
+  }
+  .tg-button {
+    background-color: var(--tg-theme-button-color, #2481cc);
+    color: var(--tg-theme-button-text-color, #ffffff);
+  }
+  .tg-button:hover {
+    opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// Initialize Telegram WebApp
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const initialResources = [
+  { id: 1, name: 'База данных клиентов', description: 'Доступ к информации о клиентах' },
+  { id: 2, name: 'Финансовые отчеты', description: 'Доступ к финансовой аналитике' },
+  { id: 3, name: 'Админ-панель', description: 'Полный административный доступ' },
+];
+
+const initialRoles = ['Администратор', 'Менеджер', 'Аналитик', 'Гость'];
+
+// Initial permissions
+const initialPermissions = [
+  { id: 1, name: 'Чтение', description: 'Просмотр данных' },
+  { id: 2, name: 'Запись', description: 'Изменение данных' },
+  { id: 3, name: 'Удаление', description: 'Удаление данных' },
+  { id: 4, name: 'Администрирование', description: 'Управление системой' },
+];
+
+// Initial role permissions matrix
+const initialRolePermissions = {
+  'Администратор': [1, 2, 3, 4],
+  'Менеджер': [1, 2],
+  'Аналитик': [1],
+  'Гость': [1],
+};
+
+// Initial SoD conflict matrix for roles
+const initialRoleConflictMatrix = {
+  'Администратор': { 'Аналитик': '+' },
+  'Менеджер': { 'Гость': '+' },
+  'Аналитик': { 'Администратор': '+' },
+  'Гость': { 'Менеджер': '+' },
+};
+
+function App() {
+  const [users, setUsers] = useState([
+    { id: 1, name: 'Иван Иванов', role: 'Администратор', resources: [1, 2, 3] },
+    { id: 2, name: 'Мария Петрова', role: 'Менеджер', resources: [1, 2] },
+    { id: 3, name: 'Алексей Сидоров', role: 'Аналитик', resources: [2] },
+  ]);
+  const [newUser, setNewUser] = useState({ name: '', role: '', resources: [] });
+  const [editingUser, setEditingUser] = useState(null);
+  const [sodWarnings, setSodWarnings] = useState([]);
+  const [roleConflictMatrix, setRoleConflictMatrix] = useState(initialRoleConflictMatrix);
+  const [roles, setRoles] = useState(initialRoles);
+  const [resources, setResources] = useState(initialResources);
+  const [permissions, setPermissions] = useState(initialPermissions);
+  const [newRole, setNewRole] = useState('');
+  const [newResource, setNewResource] = useState({ name: '', description: '' });
+  const [newPermission, setNewPermission] = useState({ name: '', description: '' });
+  const [activeTab, setActiveTab] = useState('users');
+  const [rolePermissions, setRolePermissions] = useState(initialRolePermissions);
+
+  // Toggle conflict in role matrix
+  const toggleRoleConflict = (rowRole, colRole) => {
+    if (rowRole === colRole) return; // Prevent editing diagonal cells
+    setRoleConflictMatrix(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      if (!newMatrix[rowRole]) newMatrix[rowRole] = {};
+      if (!newMatrix[colRole]) newMatrix[colRole] = {};
+      
+      if (newMatrix[rowRole][colRole] === '+') {
+        delete newMatrix[rowRole][colRole];
+        delete newMatrix[colRole][rowRole];
+      } else {
+        newMatrix[rowRole][colRole] = '+';
+        newMatrix[colRole][rowRole] = '+'; // Ensure symmetry
+      }
+      return newMatrix;
+    });
+  };
+
+  // Toggle permission for role
+  const toggleRolePermission = (role, permissionId) => {
+    setRolePermissions(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      if (!newMatrix[role]) {
+        newMatrix[role] = [];
+      }
+      
+      const permissionIndex = newMatrix[role].indexOf(permissionId);
+      if (permissionIndex === -1) {
+        newMatrix[role] = [...newMatrix[role], permissionId];
+      } else {
+        newMatrix[role] = newMatrix[role].filter(id => id !== permissionId);
+      }
+      return newMatrix;
+    });
+  };
+
+  // Add new role
+  const addRole = () => {
+    if (newRole && !roles.includes(newRole)) {
+      setRoles([...roles, newRole]);
+      setRoleConflictMatrix(prevMatrix => ({
+        ...prevMatrix,
+        [newRole]: {},
+      }));
+      setRolePermissions(prevMatrix => ({
+        ...prevMatrix,
+        [newRole]: [],
+      }));
+      setNewRole('');
+    }
+  };
+
+  // Delete role
+  const deleteRole = (role) => {
+    if (users.some(user => user.role === role)) {
+      alert('Нельзя удалить роль, которая назначена пользователю');
+      return;
+    }
+    setRoles(roles.filter(r => r !== role));
+    setRoleConflictMatrix(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      delete newMatrix[role];
+      Object.keys(newMatrix).forEach(r => delete newMatrix[r][role]);
+      return newMatrix;
+    });
+    setRolePermissions(prevMatrix => {
+      const newMatrix = { ...prevMatrix };
+      delete newMatrix[role];
+      return newMatrix;
+    });
+  };
+
+  // Add new resource
+  const addResource = () => {
+    if (newResource.name && newResource.description) {
+      const newId = resources.length ? Math.max(...resources.map(r => r.id)) + 1 : 1;
+      setResources([...resources, { id: newId, ...newResource }]);
+      setNewResource({ name: '', description: '' });
+    }
+  };
+
+  // Delete resource
+  const deleteResource = (id) => {
+    if (users.some(user => user.resources.includes(id))) {
+      alert('Нельзя удалить ресурс, который назначен пользователю');
+      return;
+    }
+    setResources(resources.filter(r => r.id !== id));
+  };
+
+  // Add new permission
+  const addPermission = () => {
+    if (newPermission.name && newPermission.description) {
+      const newId = permissions.length ? Math.max(...permissions.map(p => p.id)) + 1 : 1;
+      setPermissions([...permissions, { id: newId, ...newPermission }]);
+      setNewPermission({ name: '', description: '' });
+    }
+  };
+
+  // Delete permission
+  const deletePermission = (id) => {
+    setPermissions(permissions.filter(p => p.id !== id));
+  };
+
+  // Add Telegram WebApp specific functions
+  const sendDataToTelegram = (data) => {
+    tg.sendData(JSON.stringify(data));
+  };
+
+  // Modify addUser to send data to Telegram
+  const addUser = () => {
+    if (newUser.name && newUser.role) {
+      const warnings = checkSodConflicts(newUser);
+      if (warnings.length > 0) {
+        setSodWarnings(warnings);
+        return;
+      }
+      const updatedUsers = [...users, { id: users.length + 1, ...newUser }];
+      setUsers(updatedUsers);
+      setNewUser({ name: '', role: '', resources: [] });
+      setSodWarnings([]);
+      
+      // Send updated users to Telegram
+      sendDataToTelegram({
+        type: 'users_update',
+        data: updatedUsers
+      });
+    }
+  };
+
+  // Modify updateUser to send data to Telegram
+  const updateUser = () => {
+    const warnings = checkSodConflicts(editingUser);
+    if (warnings.length > 0) {
+      setSodWarnings(warnings);
+      return;
+    }
+    const updatedUsers = users.map(user => user.id === editingUser.id ? editingUser : user);
+    setUsers(updatedUsers);
+    setEditingUser(null);
+    setSodWarnings([]);
+    
+    // Send updated users to Telegram
+    sendDataToTelegram({
+      type: 'users_update',
+      data: updatedUsers
+    });
+  };
+
+  // Modify deleteUser to send data to Telegram
+  const deleteUser = (id) => {
+    const updatedUsers = users.filter(user => user.id !== id);
+    setUsers(updatedUsers);
+    
+    // Send updated users to Telegram
+    sendDataToTelegram({
+      type: 'users_update',
+      data: updatedUsers
+    });
+  };
+
+  const handleResourceToggle = (resourceId, isEditing = false) => {
+    const target = isEditing ? editingUser : newUser;
+    const setTarget = isEditing ? setEditingUser : setNewUser;
+    const updatedResources = target.resources.includes(resourceId)
+      ? target.resources.filter(id => id !== resourceId)
+      : [...target.resources, resourceId];
+    setTarget({ ...target, resources: updatedResources });
+  };
+
+  // Add Telegram WebApp event listeners
+  useEffect(() => {
+    tg.onEvent('viewportChanged', () => {
+      tg.expand();
+    });
+
+    // Handle data from Telegram
+    tg.onEvent('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'init_data') {
+          // Handle initial data from Telegram
+          if (data.users) setUsers(data.users);
+          if (data.roles) setRoles(data.roles);
+          if (data.resources) setResources(data.resources);
+        }
+      } catch (e) {
+        console.error('Error parsing Telegram data:', e);
+      }
+    });
+
+    // Send ready signal to Telegram
+    tg.ready();
+  }, []);
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Управление доступом к ресурсам</h1>
+
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b">
+        <div className="flex space-x-4">
+          <button
+            className={`py-2 px-4 ${activeTab === 'users' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setActiveTab('users')}
+          >
+            Пользователи
+          </button>
+          <button
+            className={`py-2 px-4 ${activeTab === 'roles' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+            onClick={() => setActiveTab('roles')}
+          >
+            Роли и ресурсы
+          </button>
+        </div>
+      </div>
+
+      {/* Users Tab Content */}
+      {activeTab === 'users' && (
+        <>
+          {/* SoD Warnings */}
+          {sodWarnings.length > 0 && (
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 rounded">
+              <h3 className="text-lg font-semibold text-red-700">Обнаружены конфликты SoD:</h3>
+              <ul className="list-disc pl-5">
+                {sodWarnings.map((warning, index) => (
+                  <li key={index} className="text-red-700">{warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Форма добавления/редактирования пользователя */}
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">
+              {editingUser ? 'Редактировать пользователя' : 'Добавить пользователя'}
+            </h2>
+            <div className="flex flex-col gap-4">
+              <input
+                type="text"
+                placeholder="Имя пользователя"
+                className="border p-2 rounded"
+                value={editingUser ? editingUser.name : newUser.name}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  editingUser
+                    ? setEditingUser({ ...editingUser, name: value })
+                    : setNewUser({ ...newUser, name: value });
+                }}
+              />
+              <select
+                className="border p-2 rounded"
+                value={editingUser ? editingUser.role : newUser.role}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  editingUser
+                    ? setEditingUser({ ...editingUser, role: value })
+                    : setNewUser({ ...newUser, role: value });
+                }}
+              >
+                <option value="">Выберите роль</option>
+                {roles.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+              <div>
+                <h3 className="font-semibold">Доступ к ресурсам:</h3>
+                {resources.map(resource => (
+                  <div key={resource.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={(editingUser ? editingUser.resources : newUser.resources).includes(resource.id)}
+                      onChange={() => handleResourceToggle(resource.id, !!editingUser)}
+                    />
+                    <span>{resource.name} - {resource.description}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="tg-button p-2 rounded"
+                onClick={editingUser ? updateUser : addUser}
+              >
+                {editingUser ? 'Сохранить изменения' : 'Добавить пользователя'}
+              </button>
+              {editingUser && (
+                <button
+                  className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+                  onClick={() => { setEditingUser(null); setSodWarnings([]); }}
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Список пользователей */}
+          <div className="grid gap-4">
+            {users.map(user => (
+              <div key={user.id} className="p-4 border rounded flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold">{user.name}</h3>
+                  <p>Роль: {user.role}</p>
+                  <p>Ресурсы: {user.resources.map(id => 
+                    resources.find(r => r.id === id)?.name || 'Удаленный ресурс').join(', ') || 'Нет доступа'}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+                    onClick={() => setEditingUser(user)}
+                  >
+                    Редактировать
+                  </button>
+                  <button
+                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                    onClick={() => deleteUser(user.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Roles and Resources Tab Content */}
+      {activeTab === 'roles' && (
+        <>
+          {/* Cat Image */}
+          <div className="mb-6 p-4 border rounded flex justify-center">
+            <img 
+              src="https://cataas.com/cat" 
+              alt="Котик" 
+              className="max-w-[300px] rounded-lg shadow-lg"
+            />
+          </div>
+
+          {/* Role-Permissions Matrix */}
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">Матрица полномочий ролей</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2 sticky left-0 bg-gray-100">Роль</th>
+                    {permissions.map(permission => (
+                      <th key={permission.id} className="border p-2 min-w-[150px]">
+                        <div className="font-semibold">{permission.name}</div>
+                        <div className="text-xs text-gray-600">{permission.description}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {roles.map(role => (
+                    <tr key={role} className="hover:bg-gray-50">
+                      <td className="border p-2 font-semibold sticky left-0 bg-white">{role}</td>
+                      {permissions.map(permission => (
+                        <td
+                          key={permission.id}
+                          className={`border p-2 text-center cursor-pointer hover:bg-blue-100 ${
+                            rolePermissions[role]?.includes(permission.id) ? 'bg-green-100' : ''
+                          }`}
+                          onClick={() => toggleRolePermission(role, permission.id)}
+                        >
+                          {rolePermissions[role]?.includes(permission.id) ? '✓' : ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2 text-sm text-gray-600">Кликните на ячейку, чтобы добавить или убрать полномочие для роли.</p>
+          </div>
+
+          {/* Форма управления ролями */}
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">Управление ролями</h2>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Название новой роли"
+                className="border p-2 rounded flex-1"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+              />
+              <button
+                className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                onClick={addRole}
+              >
+                Добавить роль
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {roles.map(role => (
+                <div key={role} className="flex justify-between items-center p-2 border rounded">
+                  <span>{role}</span>
+                  <button
+                    className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                    onClick={() => deleteRole(role)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Форма управления полномочиями */}
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">Управление полномочиями</h2>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Название полномочия"
+                className="border p-2 rounded flex-1"
+                value={newPermission.name}
+                onChange={(e) => setNewPermission({ ...newPermission, name: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Описание полномочия"
+                className="border p-2 rounded flex-1"
+                value={newPermission.description}
+                onChange={(e) => setNewPermission({ ...newPermission, description: e.target.value })}
+              />
+              <button
+                className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                onClick={addPermission}
+              >
+                Добавить полномочие
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {permissions.map(permission => (
+                <div key={permission.id} className="flex justify-between items-center p-2 border rounded">
+                  <span>{permission.name} - {permission.description}</span>
+                  <button
+                    className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                    onClick={() => deletePermission(permission.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Форма управления ресурсами */}
+          <div className="mb-6 p-4 border rounded">
+            <h2 className="text-xl font-semibold mb-2">Управление ресурсами</h2>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Название ресурса"
+                className="border p-2 rounded flex-1"
+                value={newResource.name}
+                onChange={(e) => setNewResource({ ...newResource, name: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Описание ресурса"
+                className="border p-2 rounded flex-1"
+                value={newResource.description}
+                onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
+              />
+              <button
+                className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                onClick={addResource}
+              >
+                Добавить ресурс
+              </button>
+            </div>
+            <div className="grid gap-2">
+              {resources.map(resource => (
+                <div key={resource.id} className="flex justify-between items-center p-2 border rounded">
+                  <span>{resource.name} - {resource.description}</span>
+                  <button
+                    className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                    onClick={() => deleteResource(resource.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
