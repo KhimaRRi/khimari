@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UsersTab } from './UsersTab';
+import UsersTab from './UsersTab';
 import { AccountsTab } from './AccountsTab';
 import { RolesTab } from './RolesTab';
 import { RoleMatrixTab } from './RoleMatrixTab';

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Система управления доступом</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
 <link href="styles.css" rel="stylesheet">
 </head>
 <body>
@@ -46,25 +47,29 @@ window.initialRoles = [
 ];
 
 window.initialPermissions = [
-    { id: 1, code: 'read', name: 'Чтение', description: 'Право на чтение' },
-    { id: 2, code: 'write', name: 'Запись', description: 'Право на запись' },
-    { id: 3, code: 'delete', name: 'Удаление', description: 'Право на удаление' },
-    { id: 4, code: 'create', name: 'Создание', description: 'Право на создание' },
-    { id: 5, code: 'update', name: 'Обновление', description: 'Право на обновление' },
-    { id: 6, code: 'execute', name: 'Выполнение', description: 'Право на выполнение' },
-    { id: 7, code: 'approve', name: 'Утверждение', description: 'Право на утверждение' },
-    { id: 8, code: 'admin', name: 'Администрирование', description: 'Право на администрирование' }
+    { id: 1, code: 'read', name: 'Просмотр', description: 'Право на просмотр данных и документов' },
+    { id: 2, code: 'write', name: 'Редактирование', description: 'Право на редактирование данных' },
+    { id: 3, code: 'delete', name: 'Удаление', description: 'Право на удаление данных и документов' },
+    { id: 4, code: 'create', name: 'Создание', description: 'Право на создание новых записей' },
+    { id: 5, code: 'approve', name: 'Утверждение', description: 'Право на утверждение документов и решений' },
+    { id: 6, code: 'export', name: 'Экспорт', description: 'Право на экспорт данных' },
+    { id: 7, code: 'import', name: 'Импорт', description: 'Право на импорт данных' },
+    { id: 8, code: 'audit', name: 'Аудит', description: 'Право на просмотр журналов аудита' },
+    { id: 9, code: 'admin', name: 'Администрирование', description: 'Право на управление системой' },
+    { id: 10, code: 'backup', name: 'Резервное копирование', description: 'Право на создание резервных копий' },
+    { id: 11, code: 'restore', name: 'Восстановление', description: 'Право на восстановление данных' },
+    { id: 12, code: 'security', name: 'Безопасность', description: 'Право на настройки безопасности' }
 ];
 
 window.initialRolePermissions = {
-    1: [1, 2, 3, 4, 5, 6, 7, 8], // Администратор
-    2: [1, 2, 4, 5], // Менеджер
-    3: [1, 2, 3, 4, 5, 6], // Разработчик
-    4: [1, 6], // Тестировщик
-    5: [1, 2, 4, 5], // Аналитик
-    6: [1, 2, 4, 5], // Дизайнер
-    7: [1, 2, 4, 5], // Контент-менеджер
-    8: [1] // Гость
+    1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Администратор - все полномочия
+    2: [1, 2, 4, 5, 6, 7], // Менеджер - просмотр, редактирование, создание, утверждение, экспорт, импорт
+    3: [1, 2, 3, 4, 6], // Разработчик - просмотр, редактирование, удаление, создание, экспорт
+    4: [1, 6], // Тестировщик - просмотр, экспорт
+    5: [1, 2, 4, 5, 6, 7], // Аналитик - просмотр, редактирование, создание, утверждение, экспорт, импорт
+    6: [1, 2, 4, 6], // Дизайнер - просмотр, редактирование, создание, экспорт
+    7: [1, 2, 4, 6, 7], // Контент-менеджер - просмотр, редактирование, создание, экспорт, импорт
+    8: [1] // Гость - только просмотр
 };
 
 window.initialRoleConflictMatrix = {
@@ -116,7 +121,7 @@ window.initialAccounts = [
     roles: ['Директор департамента'],
     email: 'bok@example.com',
     status: 'active',
-    permissions: ['Чтение', 'Запись'],
+    permissions: ['Просмотр', 'Редактирование', 'Утверждение'],
     lastLogin: '2020-01-15 12:21',
     created: '15 января 2020, 12:21'
   },
@@ -126,7 +131,7 @@ window.initialAccounts = [
     roles: ['Менеджер'],
     email: 'dutov@example.com',
     status: 'active',
-    permissions: ['Чтение', 'Запись', 'Администрирование'],
+    permissions: ['Просмотр', 'Редактирование', 'Создание', 'Утверждение'],
     lastLogin: '2020-02-12 15:09',
     created: '12 февраля 2020, 15:09'
   },
@@ -136,7 +141,7 @@ window.initialAccounts = [
     roles: ['Аналитик'],
     email: 'kiselev@example.com',
     status: 'active',
-    permissions: ['Чтение', 'Запись', 'Удаление', 'Администрирование', 'Экспорт', 'Импорт', 'Аудит', 'Настройки'],
+    permissions: ['Просмотр', 'Редактирование', 'Создание', 'Утверждение', 'Экспорт', 'Импорт', 'Аудит'],
     lastLogin: '2020-01-15 12:21',
     created: '15 января 2020, 12:21'
   },
@@ -146,7 +151,7 @@ window.initialAccounts = [
     roles: ['Оператор'],
     email: 'smirnov@example.com',
     status: 'active',
-    permissions: ['Чтение', 'Администрирование'],
+    permissions: ['Просмотр', 'Редактирование', 'Создание'],
     lastLogin: '2020-02-10 09:00',
     created: '10 февраля 2020, 09:00'
   },
@@ -156,9 +161,169 @@ window.initialAccounts = [
     roles: ['Супервизор'],
     email: 'vorobiev@example.com',
     status: 'active',
-    permissions: ['Чтение', 'Импорт'],
+    permissions: ['Просмотр', 'Аудит', 'Экспорт'],
     lastLogin: '2020-02-05 09:00',
     created: '5 февраля 2020, 09:00'
+  }
+];
+
+// Примеры событий для истории
+window.initialEvents = [
+  {
+    type: 'login',
+    description: 'Вход в систему: A.A.Bok',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T10:30:00.000Z',
+    details: { username: 'A.A.Bok' }
+  },
+  {
+    type: 'user_add',
+    description: 'Добавлен пользователь: Петров Сергей Владимирович',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T10:25:00.000Z',
+    details: {
+      name: 'Петров Сергей Владимирович',
+      positionId: 3,
+      roles: [2],
+      permissions: [1, 2, 4, 5]
+    }
+  },
+  {
+    type: 'permission_add',
+    description: 'Добавлено полномочие "Экспорт" к роли "Менеджер"',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T10:20:00.000Z',
+    details: {
+      role: 'Менеджер',
+      permission: 'Экспорт'
+    }
+  },
+  {
+    type: 'role_add',
+    description: 'Добавлена роль: Аудитор',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T10:15:00.000Z',
+    details: {
+      id: 9,
+      name: 'Аудитор'
+    }
+  },
+  {
+    type: 'conflict_add',
+    description: 'Добавлен конфликт между ролями: Менеджер и Аудитор',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T10:10:00.000Z',
+    details: {
+      role1: 'Менеджер',
+      role2: 'Аудитор',
+      conflictType: '+'
+    }
+  },
+  {
+    type: 'user_edit',
+    description: 'Отредактирован пользователь: Мария Петрова',
+    user: 'A.A.Dutov',
+    timestamp: '2024-01-15T09:45:00.000Z',
+    details: {
+      name: 'Мария Петрова',
+      positionId: 2,
+      roles: [2, 3],
+      permissions: [1, 2, 4, 5, 6]
+    }
+  },
+  {
+    type: 'permission_remove',
+    description: 'Удалено полномочие "Удаление" у роли "Разработчик"',
+    user: 'A.A.Dutov',
+    timestamp: '2024-01-15T09:40:00.000Z',
+    details: {
+      role: 'Разработчик',
+      permission: 'Удаление'
+    }
+  },
+  {
+    type: 'logout',
+    description: 'Выход из системы: A.A.Kiselev',
+    user: 'A.A.Kiselev',
+    timestamp: '2024-01-15T09:30:00.000Z',
+    details: { username: 'A.A.Kiselev' }
+  },
+  {
+    type: 'login',
+    description: 'Вход в систему: A.A.Kiselev',
+    user: 'A.A.Kiselev',
+    timestamp: '2024-01-15T09:00:00.000Z',
+    details: { username: 'A.A.Kiselev' }
+  },
+  {
+    type: 'resource_add',
+    description: 'Добавлен ресурс: Финансовые отчеты',
+    user: 'A.A.Kiselev',
+    timestamp: '2024-01-15T08:45:00.000Z',
+    details: {
+      id: 9,
+      name: 'Финансовые отчеты',
+      description: 'Доступ к финансовым отчетам'
+    }
+  },
+  {
+    type: 'user_delete',
+    description: 'Удален пользователь: Иванов Иван Иванович',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T08:30:00.000Z',
+    details: {
+      name: 'Иванов Иван Иванович',
+      positionId: 1,
+      roles: [1, 2],
+      permissions: [1, 2, 3, 9]
+    }
+  },
+  {
+    type: 'conflict_toggle',
+    description: 'Изменен конфликт между ролями: Администратор и Менеджер',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T08:15:00.000Z',
+    details: {
+      role1: 'Администратор',
+      role2: 'Менеджер',
+      newValue: '+'
+    }
+  },
+  {
+    type: 'role_edit',
+    description: 'Отредактирована роль: Тестировщик',
+    user: 'A.A.Dutov',
+    timestamp: '2024-01-15T08:00:00.000Z',
+    details: {
+      id: 4,
+      name: 'Тестировщик',
+      description: 'Роль для тестирования систем'
+    }
+  },
+  {
+    type: 'permissions_matrix_save',
+    description: 'Сохранены изменения в матрице полномочий',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T07:45:00.000Z',
+    details: {
+      changes: {
+        1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        2: [1, 2, 4, 5, 6, 7],
+        3: [1, 2, 3, 4, 6]
+      }
+    }
+  },
+  {
+    type: 'conflicts_matrix_save',
+    description: 'Сохранены изменения в матрице конфликтов',
+    user: 'A.A.Bok',
+    timestamp: '2024-01-15T07:30:00.000Z',
+    details: {
+      changes: {
+        1: { 2: '+', 3: '+', 4: '+', 5: '+', 6: '+', 7: '+', 8: '+' },
+        2: { 1: '+', 3: '-', 4: '-', 5: '-', 6: '-', 7: '-', 8: '+' }
+      }
+    }
   }
 ];
 </script>

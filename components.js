@@ -1,23 +1,22 @@
 // UsersTab
-function UsersTab({ roles, permissions, positionRoleMap, positionList, rolePermissions, onAddUser, users, onDeleteUser, setUsers }) {
+function UsersTab({ roles, permissions, positionRoleMap, positionList, rolePermissions, onAddUser, users, onDeleteUser, setUsers, onEditUser }) {
     const [newUser, setNewUser] = useState({ name: '', positionId: '' });
     const [selectedRoles, setSelectedRoles] = useState([]);
     const [selectedPermissions, setSelectedPermissions] = useState([]);
     const [alert, setAlert] = useState(null);
+    const [editingIdx, setEditingIdx] = useState(null);
+    const [editUser, setEditUser] = useState(null);
 
-    // Инициализация пользователей из window.initialUsers
     useEffect(() => {
         if (window.initialUsers && users.length === 0) {
             setUsers(window.initialUsers);
         }
     }, []);
 
-    // При выборе должности автоматически подставлять роли и полномочия
     useEffect(() => {
         if (newUser.positionId) {
             const rolesForPosition = positionRoleMap[newUser.positionId] || [];
             setSelectedRoles(rolesForPosition);
-            // Собираем все полномочия для этих ролей
             let perms = new Set();
             rolesForPosition.forEach(roleId => {
                 (rolePermissions[roleId] || []).forEach(permId => perms.add(permId));
@@ -36,86 +35,194 @@ function UsersTab({ roles, permissions, positionRoleMap, positionList, rolePermi
     const handleSubmit = e => {
         e.preventDefault();
         if (!newUser.name || !newUser.positionId) {
-            setAlert({ type: 'danger', msg: 'Пожалуйста, заполните имя и выберите должность.' });
+            setAlert({ type: 'danger', msg: 'Заполните все поля' });
             return;
         }
-        onAddUser({
+        const userToAdd = {
+            id: users.length + 1,
             ...newUser,
             positionId: Number(newUser.positionId),
             roles: selectedRoles,
             permissions: selectedPermissions
-        });
+        };
+        onAddUser(userToAdd);
         setNewUser({ name: '', positionId: '' });
         setSelectedRoles([]);
         setSelectedPermissions([]);
-        setAlert({ type: 'success', msg: 'Пользователь успешно добавлен!' });
+        setAlert({ type: 'success', msg: 'Пользователь добавлен' });
+    };
+
+    const handleEdit = (idx) => {
+        setEditingIdx(idx);
+        const user = users[idx];
+        setEditUser({
+            ...user,
+            positionId: user.positionId || '',
+            roles: user.roles ? [...user.roles] : [],
+            permissions: user.permissions ? [...user.permissions] : []
+        });
+    };
+
+    const handleSaveEdit = () => {
+        if (!editUser.name || !editUser.positionId) {
+            setAlert({ type: 'danger', msg: 'Заполните все поля' });
+            return;
+        }
+        const updatedUser = {
+            ...editUser,
+            positionId: Number(editUser.positionId)
+        };
+        onEditUser(updatedUser.id, updatedUser);
+        setEditingIdx(null);
+        setEditUser(null);
+        setAlert({ type: 'success', msg: 'Пользователь обновлен' });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingIdx(null);
+        setEditUser(null);
+    };
+
+    const handleEditChange = (e) => {
+        setEditUser({ ...editUser, [e.target.name]: e.target.value });
+        if (e.target.name === 'positionId') {
+            const rolesForPosition = positionRoleMap[e.target.value] || [];
+            let perms = new Set();
+            rolesForPosition.forEach(roleId => {
+                (rolePermissions[roleId] || []).forEach(permId => perms.add(permId));
+            });
+            setEditUser(prev => ({
+                ...prev,
+                roles: rolesForPosition,
+                permissions: Array.from(perms)
+            }));
+        }
+    };
+
+    const handleDelete = (userId) => {
+        if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+            onDeleteUser(userId);
+            setAlert({ type: 'success', msg: 'Пользователь удален' });
+        }
     };
 
     return (
-        <div>
-            <h5 className="mb-3">Добавить пользователя</h5>
+        <div className="container-fluid px-2">
             {alert && (
-                <div className={`alert alert-${alert.type} mb-2`} role="alert">
+                <div className={`alert alert-${alert.type} py-2 mb-2`} role="alert">
                     {alert.msg}
                 </div>
             )}
-            <form onSubmit={handleSubmit} className="mb-4">
-                <input
-                    type="text"
-                    className="form-control mb-2"
-                    name="name"
-                    placeholder="Имя пользователя"
-                    value={newUser.name}
-                    onChange={handleChange}
-                />
-                <select
-                    className="form-select mb-2"
-                    name="positionId"
-                    value={newUser.positionId}
-                    onChange={handleChange}
-                >
-                    <option value="">Выберите должность</option>
-                    {positionList.map(pos => (
-                        <option key={pos.id} value={pos.id}>{pos.name}</option>
-                    ))}
-                </select>
-                <div className="mb-2">
-                    <div className="fw-bold">Роли, назначаемые должности:</div>
-                    <ul className="mb-1">
-                        {selectedRoles.map(roleId => {
-                            const role = roles.find(r => r.id === roleId);
-                            return role ? <li key={roleId}>{role.name}</li> : null;
-                        })}
-                    </ul>
+            <div className="card mb-3">
+                <div className="card-body p-3">
+                    <form onSubmit={handleSubmit} className="row g-2">
+                        <div className="col-md-4">
+                            <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                name="name"
+                                placeholder="Имя пользователя"
+                                value={newUser.name}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="col-md-4">
+                            <select
+                                className="form-select form-select-sm"
+                                name="positionId"
+                                value={newUser.positionId}
+                                onChange={handleChange}
+                            >
+                                <option value="">Выберите должность</option>
+                                {positionList.map(pos => (
+                                    <option key={pos.id} value={pos.id}>{pos.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="col-md-4">
+                            <button className="btn btn-primary btn-sm w-100" type="submit">Добавить</button>
+                        </div>
+                    </form>
+                    {selectedRoles.length > 0 && (
+                        <div className="mt-2 small">
+                            <div className="text-muted">Роли: {selectedRoles.map(roleId => {
+                                const role = roles.find(r => r.id === roleId);
+                                return role ? role.name : '';
+                            }).filter(Boolean).join(', ')}</div>
+                        </div>
+                    )}
                 </div>
-                <div className="mb-2">
-                    <div className="fw-bold">Полномочия на основе выбранной должности:</div>
-                    <ul className="mb-1">
-                        {selectedPermissions.map(permId => {
-                            const perm = permissions.find(p => p.id === permId);
-                            return perm ? <li key={permId}>{perm.name}</li> : null;
-                        })}
-                    </ul>
-                </div>
-                <button className="btn btn-primary w-100" type="submit">Добавить пользователя</button>
-            </form>
+            </div>
+
             {users.map((user, idx) => {
                 const position = positionList.find(p => p.id === user.positionId);
+                if (editingIdx === idx && editUser) {
+                    return (
+                        <div key={idx} className="card mb-2">
+                            <div className="card-body p-3">
+                                <div className="row g-2">
+                                    <div className="col-md-4">
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            name="name"
+                                            value={editUser.name}
+                                            onChange={handleEditChange}
+                                        />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <select
+                                            className="form-select form-select-sm"
+                                            name="positionId"
+                                            value={editUser.positionId}
+                                            onChange={handleEditChange}
+                                        >
+                                            <option value="">Выберите должность</option>
+                                            {positionList.map(pos => (
+                                                <option key={pos.id} value={pos.id}>{pos.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <div className="btn-group w-100">
+                                            <button className="btn btn-success btn-sm" onClick={handleSaveEdit}>Сохранить</button>
+                                            <button className="btn btn-secondary btn-sm" onClick={handleCancelEdit}>Отмена</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-2 small">
+                                    <div className="text-muted">Роли: {editUser.roles.map(roleId => {
+                                        const role = roles.find(r => r.id === roleId);
+                                        return role ? role.name : '';
+                                    }).filter(Boolean).join(', ')}</div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
                 return (
-                    <div key={idx} className="mb-3 p-3 bg-light rounded">
-                        <div className="fw-bold">{user.name}</div>
-                        <div className="text-muted">Должность: {position ? position.name : ''}</div>
-                        <div>Роли: {user.roles.map(roleId => {
-                            const role = roles.find(r => r.id === roleId);
-                            return role ? role.name : '';
-                        }).filter(Boolean).join(', ')}</div>
-                        <div>Полномочия: {user.permissions.map(permId => {
-                            const perm = permissions.find(p => p.id === permId);
-                            return perm ? perm.name : '';
-                        }).filter(Boolean).join(', ')}</div>
-                        <div className="btn-group mt-2">
-                            <button className="btn btn-warning btn-sm">Редактировать</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => onDeleteUser(idx)}>Удалить</button>
+                    <div key={idx} className="card mb-2">
+                        <div className="card-body p-3">
+                            <div className="row align-items-center">
+                                <div className="col-md-4">
+                                    <div className="fw-bold">{user.name}</div>
+                                    <div className="text-muted small">{position ? position.name : ''}</div>
+                                </div>
+                                <div className="col-md-4">
+                                    <div className="small">
+                                        <div>Роли: {user.roles.map(roleId => {
+                                            const role = roles.find(r => r.id === roleId);
+                                            return role ? role.name : '';
+                                        }).filter(Boolean).join(', ')}</div>
+                                    </div>
+                                </div>
+                                <div className="col-md-4">
+                                    <div className="btn-group w-100">
+                                        <button className="btn btn-warning btn-sm" onClick={() => handleEdit(idx)}>Редактировать</button>
+                                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(user.id)}>Удалить</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
@@ -385,13 +492,91 @@ function ResourcesTab({ resources, onAddResource, onEditResource, onDeleteResour
 }
 
 // ConflictMatrixTab
-function ConflictMatrixTab({ roles, roleConflictMatrix, onToggleConflict }) {
+function ConflictMatrixTab({ roles, roleConflictMatrix, onToggleConflict, onSaveConflicts }) {
+    const [localConflictMatrix, setLocalConflictMatrix] = useState(JSON.parse(JSON.stringify(roleConflictMatrix)));
+    const [hasChanges, setHasChanges] = useState(false);
+    const [saving, setSaving] = useState(false);
+
     // Роли отсортированы по id для корректного отображения
     const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
 
+    // Отслеживаем изменения
+    useEffect(() => {
+        const changed = JSON.stringify(localConflictMatrix) !== JSON.stringify(roleConflictMatrix);
+        setHasChanges(changed);
+    }, [localConflictMatrix, roleConflictMatrix]);
+
+    const handleToggleConflict = (roleId1, roleId2) => {
+        const newMatrix = JSON.parse(JSON.stringify(localConflictMatrix));
+        const currentValue = newMatrix[roleId1]?.[roleId2];
+        const newValue = currentValue === '+' ? '-' : '+';
+        
+        if (!newMatrix[roleId1]) newMatrix[roleId1] = {};
+        if (!newMatrix[roleId2]) newMatrix[roleId2] = {};
+        
+        newMatrix[roleId1][roleId2] = newValue;
+        newMatrix[roleId2][roleId1] = newValue;
+        
+        setLocalConflictMatrix(newMatrix);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            // Вызываем обработчик для сохранения
+            onSaveConflicts(localConflictMatrix);
+            setHasChanges(false);
+        } catch (error) {
+            console.error('Ошибка при сохранении:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReset = () => {
+        setLocalConflictMatrix(JSON.parse(JSON.stringify(roleConflictMatrix)));
+        setHasChanges(false);
+    };
+
     return (
         <div>
-            <h4>Матрица конфликтов ролей (SoD)</h4>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4>Матрица конфликтов ролей (SoD)</h4>
+                <div className="btn-group">
+                    {hasChanges && (
+                        <button 
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={handleReset}
+                            title="Отменить изменения"
+                        >
+                            <i className="bi bi-arrow-clockwise"></i> Отменить
+                        </button>
+                    )}
+                    <button 
+                        className={`btn btn-sm ${hasChanges ? 'btn-success' : 'btn-secondary'}`}
+                        onClick={handleSave}
+                        disabled={!hasChanges || saving}
+                    >
+                        {saving ? (
+                            <>
+                                <i className="bi bi-hourglass-split"></i> Сохранение...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-check-circle"></i> Сохранить
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {hasChanges && (
+                <div className="alert alert-warning py-2 mb-3">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    У вас есть несохраненные изменения. Нажмите "Сохранить" для применения изменений.
+                </div>
+            )}
+
             <div className="table-responsive">
                 <table className="table conflicts-matrix-table table-bordered text-center align-middle mt-3">
                     <thead>
@@ -411,13 +596,13 @@ function ConflictMatrixTab({ roles, roleConflictMatrix, onToggleConflict }) {
                                         return <td key={colRole.id} style={{ background: '#f8f9fa' }}></td>;
                                     }
                                     const conflict =
-                                        roleConflictMatrix[rowRole.id] &&
-                                        roleConflictMatrix[rowRole.id][colRole.id] === '+';
+                                        localConflictMatrix[rowRole.id] &&
+                                        localConflictMatrix[rowRole.id][colRole.id] === '+';
                                     return (
                                         <td
                                             key={colRole.id}
                                             style={{ cursor: 'pointer', background: conflict ? '#f8d7da' : undefined }}
-                                            onClick={() => onToggleConflict(rowRole.id, colRole.id)}
+                                            onClick={() => handleToggleConflict(rowRole.id, colRole.id)}
                                             title={conflict ? 'Конфликт ролей' : 'Нет конфликта'}
                                         >
                                             {conflict ? <span style={{ color: '#dc3545', fontSize: 22 }}>&times;</span> : ''}
@@ -681,40 +866,115 @@ function AccountsTab() {
     );
 }
 
-function PermissionsMatrixTab({ roles, permissions, rolePermissions, onToggleRolePermission }) {
-    const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
-    const sortedPermissions = [...permissions].sort((a, b) => a.id - b.id);
+function PermissionsMatrixTab({ roles, permissions, rolePermissions, onToggleRolePermission, onSavePermissions }) {
+    const [localRolePermissions, setLocalRolePermissions] = useState({ ...rolePermissions });
+    const [hasChanges, setHasChanges] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    // Отслеживаем изменения
+    useEffect(() => {
+        const changed = JSON.stringify(localRolePermissions) !== JSON.stringify(rolePermissions);
+        setHasChanges(changed);
+    }, [localRolePermissions, rolePermissions]);
+
+    const handleTogglePermission = (roleId, permissionId) => {
+        const newRolePermissions = { ...localRolePermissions };
+        if (newRolePermissions[roleId] && newRolePermissions[roleId].includes(permissionId)) {
+            newRolePermissions[roleId] = newRolePermissions[roleId].filter(id => id !== permissionId);
+        } else {
+            newRolePermissions[roleId] = [...(newRolePermissions[roleId] || []), permissionId];
+        }
+        setLocalRolePermissions(newRolePermissions);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            // Вызываем обработчик для сохранения
+            onSavePermissions(localRolePermissions);
+            setHasChanges(false);
+        } catch (error) {
+            console.error('Ошибка при сохранении:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReset = () => {
+        setLocalRolePermissions({ ...rolePermissions });
+        setHasChanges(false);
+    };
 
     return (
         <div>
-            <h4>Матрица полномочий ролей</h4>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4>Матрица полномочий ролей</h4>
+                <div className="btn-group">
+                    {hasChanges && (
+                        <button 
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={handleReset}
+                            title="Отменить изменения"
+                        >
+                            <i className="bi bi-arrow-clockwise"></i> Отменить
+                        </button>
+                    )}
+                    <button 
+                        className={`btn btn-sm ${hasChanges ? 'btn-success' : 'btn-secondary'}`}
+                        onClick={handleSave}
+                        disabled={!hasChanges || saving}
+                    >
+                        {saving ? (
+                            <>
+                                <i className="bi bi-hourglass-split"></i> Сохранение...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-check-circle"></i> Сохранить
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {hasChanges && (
+                <div className="alert alert-warning py-2 mb-3">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    У вас есть несохраненные изменения. Нажмите "Сохранить" для применения изменений.
+                </div>
+            )}
+
             <div className="table-responsive">
-                <table className="table permissions-matrix-table table-bordered text-center align-middle mt-3">
-                    <thead>
+                <table className="table table-bordered align-middle text-center">
+                    <thead className="table-light">
                         <tr>
-                            <th style={{ minWidth: 180 }}>Роль/Полномочие (код полномочия)</th>
-                            {sortedPermissions.map(perm => (
-                                <th key={perm.id}>
-                                    {perm.name} <span className="text-secondary">({perm.id})</span>
-                                    <div className="text-muted" style={{ fontSize: '0.85em' }}>{perm.description}</div>
-                                </th>
+                            <th>Роль</th>
+                            {permissions.map(permission => (
+                                <th key={permission.id}>{permission.name}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedRoles.map(role => (
+                        {roles.map(role => (
                             <tr key={role.id}>
-                                <th className="text-start bg-light">{role.name} <span className="text-secondary">({role.id})</span></th>
-                                {sortedPermissions.map(perm => {
-                                    const hasPermission = (rolePermissions[role.id] || []).includes(perm.id);
+                                <th className="text-start">{role.name}</th>
+                                {permissions.map(permission => {
+                                    const hasPermission = localRolePermissions[role.id] && 
+                                                        localRolePermissions[role.id].includes(permission.id);
                                     return (
-                                        <td
-                                            key={perm.id}
-                                            style={{ cursor: 'pointer', background: hasPermission ? '#d1e7dd' : undefined }}
-                                            onClick={() => onToggleRolePermission(role.id, perm.id)}
-                                            title={hasPermission ? 'Полномочие назначено' : 'Нет полномочия'}
+                                        <td 
+                                            key={permission.id}
+                                            style={{ 
+                                                cursor: 'pointer',
+                                                backgroundColor: hasPermission ? '#d1e7dd' : 'transparent'
+                                            }}
+                                            onClick={() => handleTogglePermission(role.id, permission.id)}
+                                            title={hasPermission ? 'Убрать полномочие' : 'Добавить полномочие'}
                                         >
-                                            {hasPermission ? <span style={{ color: '#198754', fontSize: 22 }}>&#10003;</span> : ''}
+                                            {hasPermission ? 
+                                                <span style={{ color: '#198754', fontSize: 18 }}>&#10003;</span> : 
+                                                ''
+                                            }
                                         </td>
                                     );
                                 })}
@@ -723,76 +983,10 @@ function PermissionsMatrixTab({ roles, permissions, rolePermissions, onToggleRol
                     </tbody>
                 </table>
             </div>
-            <div className="text-muted mt-2" style={{ fontSize: '0.95em' }}>
-                Кликните на ячейку, чтобы добавить или убрать полномочие для роли.
-            </div>
-        </div>
-    );
-}
-
-function RoleModelAnalysisTab({ users, roles, roleConflictMatrix, positionList }) {
-    // Проверка на конфликт ролей у пользователя
-    function hasRoleConflict(user) {
-        if (!user.roles || user.roles.length < 2) return false;
-        for (let i = 0; i < user.roles.length; i++) {
-            for (let j = i + 1; j < user.roles.length; j++) {
-                const r1 = user.roles[i], r2 = user.roles[j];
-                if (roleConflictMatrix[r1] && roleConflictMatrix[r1][r2] === '+') return true;
-            }
-        }
-        return false;
-    }
-
-    // Статистика по ролям
-    const roleStats = roles.map(role => ({
-        ...role,
-        count: users.filter(u => u.roles && u.roles.includes(role.id)).length
-    }));
-
-    return (
-        <div>
-            <h4>Анализ ролевой модели</h4>
-            <div className="mb-4">
-                <h6>Пользователи и их роли</h6>
-                <div className="table-responsive">
-                    <table className="table table-bordered align-middle text-center">
-                        <thead className="table-light">
-                            <tr>
-                                <th>Имя</th>
-                                <th>Должность</th>
-                                <th>Роли</th>
-                                <th>Полномочия</th>
-                                <th>Конфликт ролей</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map((user, idx) => {
-                                const position = positionList.find(p => p.id === user.positionId);
-                                const conflict = hasRoleConflict(user);
-                                return (
-                                    <tr key={idx} className={conflict ? 'table-danger' : ''}>
-                                        <td>{user.name}</td>
-                                        <td>{position ? position.name : ''}</td>
-                                        <td>{(user.roles || []).map(rid => roles.find(r => r.id === rid)?.name).filter(Boolean).join(', ')}</td>
-                                        <td>{(user.permissions || []).length}</td>
-                                        <td>{conflict ? <span className="text-danger fw-bold">Конфликт!</span> : ''}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+            <div className="mt-3">
+                <div className="text-success">
+                    <span style={{ color: '#198754', fontSize: 18 }}>&#10003;</span> Полномочие назначено
                 </div>
-            </div>
-            <div className="mb-4">
-                <h6>Статистика по ролям</h6>
-                <ul>
-                    {roleStats.map(role => (
-                        <li key={role.id}>{role.name}: {role.count} пользователь(ей)</li>
-                    ))}
-                </ul>
-            </div>
-            <div className="alert alert-info">
-                <b>Примечание:</b> Если у пользователя есть конфликтующие роли (SoD), строка выделяется красным цветом.
             </div>
         </div>
     );
@@ -807,17 +1001,31 @@ const defaultPositions = [
     { id: 5, name: 'Начальник отдела' }
 ];
 
-function PositionRoleMatrixTab({ roles, roleConflictMatrix }) {
+function PositionRoleMatrixTab({ roles, roleConflictMatrix, onSavePositionRoles }) {
     const [positions, setPositions] = useState(window.initialPositions || defaultPositions);
-    const [positionRoles, setPositionRoles] = useState({
+    const [localPositionRoles, setLocalPositionRoles] = useState({
         1: [1, 2, 3],
         2: [2, 3],
         3: [2],
         4: [3],
         5: [7, 8]
     });
+    const [hasChanges, setHasChanges] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
+
+    // Отслеживаем изменения
+    useEffect(() => {
+        const changed = JSON.stringify(localPositionRoles) !== JSON.stringify({
+            1: [1, 2, 3],
+            2: [2, 3],
+            3: [2],
+            4: [3],
+            5: [7, 8]
+        });
+        setHasChanges(changed);
+    }, [localPositionRoles]);
 
     // Проверка на конфликт ролей по SoD для данной должности
     function hasConflict(selectedRoles, roleId) {
@@ -830,7 +1038,7 @@ function PositionRoleMatrixTab({ roles, roleConflictMatrix }) {
     }
 
     const handleToggleRole = (positionId, roleId) => {
-        setPositionRoles(prev => {
+        setLocalPositionRoles(prev => {
             const current = prev[positionId] || [];
             if (current.includes(roleId)) {
                 return { ...prev, [positionId]: current.filter(id => id !== roleId) };
@@ -842,9 +1050,69 @@ function PositionRoleMatrixTab({ roles, roleConflictMatrix }) {
         });
     };
 
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            // Вызываем обработчик для сохранения
+            onSavePositionRoles(localPositionRoles);
+            setHasChanges(false);
+        } catch (error) {
+            console.error('Ошибка при сохранении:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReset = () => {
+        setLocalPositionRoles({
+            1: [1, 2, 3],
+            2: [2, 3],
+            3: [2],
+            4: [3],
+            5: [7, 8]
+        });
+        setHasChanges(false);
+    };
+
     return (
         <div>
-            <h4>Матрица соответствия должностей и ролей</h4>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4>Матрица соответствия должностей и ролей</h4>
+                <div className="btn-group">
+                    {hasChanges && (
+                        <button 
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={handleReset}
+                            title="Отменить изменения"
+                        >
+                            <i className="bi bi-arrow-clockwise"></i> Отменить
+                        </button>
+                    )}
+                    <button 
+                        className={`btn btn-sm ${hasChanges ? 'btn-success' : 'btn-secondary'}`}
+                        onClick={handleSave}
+                        disabled={!hasChanges || saving}
+                    >
+                        {saving ? (
+                            <>
+                                <i className="bi bi-hourglass-split"></i> Сохранение...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-check-circle"></i> Сохранить
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {hasChanges && (
+                <div className="alert alert-warning py-2 mb-3">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    У вас есть несохраненные изменения. Нажмите "Сохранить" для применения изменений.
+                </div>
+            )}
+
             <div className="table-responsive">
                 <table className="table positions-matrix-table table-bordered text-center align-middle mt-3">
                     <thead>
@@ -857,7 +1125,7 @@ function PositionRoleMatrixTab({ roles, roleConflictMatrix }) {
                     </thead>
                     <tbody>
                         {positions.map(pos => {
-                            const assignedRoles = positionRoles[pos.id] || [];
+                            const assignedRoles = localPositionRoles[pos.id] || [];
                             return (
                                 <tr key={pos.id}>
                                     <th className="text-start bg-light">{pos.name}</th>
@@ -888,31 +1156,322 @@ function PositionRoleMatrixTab({ roles, roleConflictMatrix }) {
     );
 }
 
-// App
+// Компонент заголовка с информацией о пользователе
+function UserHeader({ currentUser, onLogout }) {
+    return (
+        <div className="user-header">
+            <div className="d-flex align-items-center">
+                <span className="me-3">
+                    <i className="bi bi-person-circle"></i>
+                    {currentUser ? currentUser.name : 'Гость'}
+                </span>
+                <button 
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={onLogout}
+                >
+                    <i className="bi bi-box-arrow-right"></i> Выход
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// Компонент авторизации
+function AuthTab({ onLogin }) {
+    const [username, setUsername] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [error, setError] = React.useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!username || !password) {
+            setError('Введите логин и пароль');
+            return;
+        }
+        // Здесь можно добавить реальную проверку
+        onLogin({ username });
+        setUsername('');
+        setPassword('');
+        setError('');
+    };
+
+    return (
+        <div className="auth-container">
+            <form className="auth-form" onSubmit={handleSubmit}>
+                <h2>Авторизация</h2>
+                {error && <div className="auth-error">{error}</div>}
+                <div className="mb-3">
+                    <label className="form-label">Логин</label>
+                    <input type="text" className="form-control" value={username} onChange={e => setUsername(e.target.value)} />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label">Пароль</label>
+                    <input type="password" className="form-control" value={password} onChange={e => setPassword(e.target.value)} />
+                </div>
+                <button type="submit" className="btn btn-primary w-100">Войти</button>
+            </form>
+        </div>
+    );
+}
+
+// Компонент для отображения аккаунта в правом верхнем углу
+function AccountHeader({ currentUser, onLogout }) {
+    return (
+        <div className="ms-auto">
+            <div className="d-flex align-items-center">
+                <span className="me-3">
+                    <i className="bi bi-person-circle"></i>
+                    {currentUser ? currentUser.username : 'Гость'}
+                </span>
+                <button 
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={onLogout}
+                >
+                    <i className="bi bi-box-arrow-right"></i> Выход
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// Компонент истории событий
+function EventHistoryTab({ events, onClearHistory }) {
+    const [filterType, setFilterType] = useState('all');
+    const [filterUser, setFilterUser] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Фильтрация событий
+    const filteredEvents = events.filter(event => {
+        const matchesType = filterType === 'all' || event.type === filterType;
+        const matchesUser = filterUser === 'all' || event.user === filterUser;
+        const matchesSearch = !searchTerm || 
+            event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            event.user.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        return matchesType && matchesUser && matchesSearch;
+    });
+
+    const getEventIcon = (type) => {
+        switch (type) {
+            case 'user_add': return 'bi-person-plus';
+            case 'user_edit': return 'bi-person-gear';
+            case 'user_delete': return 'bi-person-x';
+            case 'role_add': return 'bi-shield-plus';
+            case 'role_edit': return 'bi-shield-gear';
+            case 'role_delete': return 'bi-shield-x';
+            case 'permission_change': return 'bi-key';
+            case 'login': return 'bi-box-arrow-in-right';
+            case 'logout': return 'bi-box-arrow-left';
+            default: return 'bi-info-circle';
+        }
+    };
+
+    const getEventColor = (type) => {
+        switch (type) {
+            case 'user_add':
+            case 'role_add':
+            case 'login': return 'success';
+            case 'user_edit':
+            case 'role_edit':
+            case 'permission_change': return 'warning';
+            case 'user_delete':
+            case 'role_delete':
+            case 'logout': return 'danger';
+            default: return 'info';
+        }
+    };
+
+    const formatDate = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleString('ru-RU');
+    };
+
+    return (
+        <div>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4>История событий</h4>
+                <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={onClearHistory}
+                    title="Очистить историю"
+                >
+                    <i className="bi bi-trash"></i> Очистить
+                </button>
+            </div>
+
+            {/* Фильтры */}
+            <div className="card mb-3">
+                <div className="card-body p-3">
+                    <div className="row g-2">
+                        <div className="col-md-3">
+                            <select 
+                                className="form-select form-select-sm"
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                            >
+                                <option value="all">Все типы событий</option>
+                                <option value="user_add">Добавление пользователя</option>
+                                <option value="user_edit">Редактирование пользователя</option>
+                                <option value="user_delete">Удаление пользователя</option>
+                                <option value="role_add">Добавление роли</option>
+                                <option value="role_edit">Редактирование роли</option>
+                                <option value="role_delete">Удаление роли</option>
+                                <option value="permission_change">Изменение полномочий</option>
+                                <option value="login">Вход в систему</option>
+                                <option value="logout">Выход из системы</option>
+                            </select>
+                        </div>
+                        <div className="col-md-3">
+                            <select 
+                                className="form-select form-select-sm"
+                                value={filterUser}
+                                onChange={(e) => setFilterUser(e.target.value)}
+                            >
+                                <option value="all">Все пользователи</option>
+                                {Array.from(new Set(events.map(e => e.user))).map(user => (
+                                    <option key={user} value={user}>{user}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="col-md-6">
+                            <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                placeholder="Поиск по описанию или пользователю..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Список событий */}
+            <div className="event-history-list">
+                {filteredEvents.length === 0 ? (
+                    <div className="text-center text-muted py-4">
+                        <i className="bi bi-clock-history" style={{ fontSize: '3rem' }}></i>
+                        <p className="mt-2">История событий пуста</p>
+                    </div>
+                ) : (
+                    filteredEvents.map((event, index) => (
+                        <div key={index} className={`alert alert-${getEventColor(event.type)} alert-dismissible fade show`}>
+                            <div className="d-flex align-items-start">
+                                <i className={`bi ${getEventIcon(event.type)} me-2 mt-1`}></i>
+                                <div className="flex-grow-1">
+                                    <div className="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{event.description}</strong>
+                                            <div className="text-muted small mt-1">
+                                                <i className="bi bi-person me-1"></i>
+                                                {event.user}
+                                            </div>
+                                        </div>
+                                        <small className="text-muted">
+                                            {formatDate(event.timestamp)}
+                                        </small>
+                                    </div>
+                                    {event.details && (
+                                        <div className="mt-2 small">
+                                            <details>
+                                                <summary>Детали</summary>
+                                                <pre className="mt-1 mb-0" style={{ fontSize: '0.8rem' }}>
+                                                    {JSON.stringify(event.details, null, 2)}
+                                                </pre>
+                                            </details>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Статистика */}
+            <div className="card mt-3">
+                <div className="card-body p-3">
+                    <h6>Статистика</h6>
+                    <div className="row text-center">
+                        <div className="col-md-3">
+                            <div className="text-primary">
+                                <strong>{events.length}</strong>
+                                <div className="small">Всего событий</div>
+                            </div>
+                        </div>
+                        <div className="col-md-3">
+                            <div className="text-success">
+                                <strong>{events.filter(e => e.type.includes('add')).length}</strong>
+                                <div className="small">Добавлений</div>
+                            </div>
+                        </div>
+                        <div className="col-md-3">
+                            <div className="text-warning">
+                                <strong>{events.filter(e => e.type.includes('edit') || e.type === 'permission_change').length}</strong>
+                                <div className="small">Изменений</div>
+                            </div>
+                        </div>
+                        <div className="col-md-3">
+                            <div className="text-danger">
+                                <strong>{events.filter(e => e.type.includes('delete')).length}</strong>
+                                <div className="small">Удалений</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Обновляем компонент App
 function App() {
     const [activeTab, setActiveTab] = useState('users');
+    const [currentUser, setCurrentUser] = useState({ username: 'A.A.Bok' }); // Устанавливаем пользователя по умолчанию
     const [users, setUsers] = useState([]);
-    const [roles, setRoles] = useState(window.initialRoles);
-    const [resources, setResources] = useState(window.initialResources);
-    const [permissions, setPermissions] = useState(window.initialPermissions);
-    const [rolePermissions, setRolePermissions] = useState(window.initialRolePermissions);
-    const [roleConflictMatrix, setRoleConflictMatrix] = useState(window.initialRoleConflictMatrix);
-    const [positionRoleMap, setPositionRoleMap] = useState(window.initialPositionRoleMap);
-    const [positionList, setPositionList] = useState(window.initialPositionList);
+    const [roles, setRoles] = useState(window.initialRoles || []);
+    const [resources, setResources] = useState(window.initialResources || []);
+    const [permissions, setPermissions] = useState(window.initialPermissions || []);
+    const [rolePermissions, setRolePermissions] = useState(window.initialRolePermissions || {});
+    const [roleConflictMatrix, setRoleConflictMatrix] = useState(window.initialRoleConflictMatrix || {});
+    const [positionList, setPositionList] = useState(window.initialPositionList || []);
+    const [positionRoleMap, setPositionRoleMap] = useState(window.initialPositionRoleMap || {});
+    const [events, setEvents] = useState(window.initialEvents || []);
+
+    // Функция для добавления события в историю
+    const addEvent = (type, description, details = null) => {
+        const event = {
+            type,
+            description,
+            user: currentUser ? currentUser.username : 'Система',
+            timestamp: new Date().toISOString(),
+            details
+        };
+        setEvents(prev => [event, ...prev]);
+    };
+
+    // Функция для очистки истории
+    const clearHistory = () => {
+        setEvents([]);
+    };
 
     // Обработчики для пользователей
     const handleAddUser = (user) => {
-        setUsers(prev => [user, ...prev]);
+        setUsers([...users, user]);
+        addEvent('user_add', `Добавлен пользователь: ${user.name}`, user);
     };
 
     const handleEditUser = (userId, userData) => {
         setUsers(users.map(user => 
             user.id === userId ? { ...user, ...userData } : user
         ));
+        addEvent('user_edit', `Отредактирован пользователь: ${userData.name}`, userData);
     };
 
     const handleDeleteUser = (userId) => {
+        const userToDelete = users.find(u => u.id === userId);
         setUsers(users.filter(user => user.id !== userId));
+        addEvent('user_delete', `Удален пользователь: ${userToDelete?.name || 'Неизвестный'}`, userToDelete);
     };
 
     // Обработчики для ролей
@@ -922,23 +1481,18 @@ function App() {
             ...roleData
         };
         setRoles([...roles, newRole]);
-        setRolePermissions({
-            ...rolePermissions,
-            [newRole.id]: []
-        });
-        setRoleConflictMatrix({
-            ...roleConflictMatrix,
-            [newRole.id]: {}
-        });
+        addEvent('role_add', `Добавлена роль: ${roleData.name}`, newRole);
     };
 
     const handleEditRole = (roleId, roleData) => {
         setRoles(roles.map(role => 
             role.id === roleId ? { ...role, ...roleData } : role
         ));
+        addEvent('role_edit', `Отредактирована роль: ${roleData.name}`, roleData);
     };
 
     const handleDeleteRole = (roleId) => {
+        const roleToDelete = roles.find(r => r.id === roleId);
         setRoles(roles.filter(role => role.id !== roleId));
         const newRolePermissions = { ...rolePermissions };
         delete newRolePermissions[roleId];
@@ -949,6 +1503,7 @@ function App() {
             delete newRoleConflictMatrix[key][roleId];
         });
         setRoleConflictMatrix(newRoleConflictMatrix);
+        addEvent('role_delete', `Удалена роль: ${roleToDelete?.name || 'Неизвестная'}`, roleToDelete);
     };
 
     // Обработчики для ресурсов
@@ -958,146 +1513,206 @@ function App() {
             ...resourceData
         };
         setResources([...resources, newResource]);
+        addEvent('resource_add', `Добавлен ресурс: ${resourceData.name}`, newResource);
     };
 
     const handleEditResource = (resourceId, resourceData) => {
         setResources(resources.map(resource => 
             resource.id === resourceId ? { ...resource, ...resourceData } : resource
         ));
+        addEvent('resource_edit', `Отредактирован ресурс: ${resourceData.name}`, resourceData);
     };
 
     const handleDeleteResource = (resourceId) => {
+        const resourceToDelete = resources.find(r => r.id === resourceId);
         setResources(resources.filter(resource => resource.id !== resourceId));
+        addEvent('resource_delete', `Удален ресурс: ${resourceToDelete?.name || 'Неизвестный'}`, resourceToDelete);
     };
 
     // Обработчики для разрешений ролей
-    const handleUpdateRolePermissions = (roleId, permissionIds) => {
-        setRolePermissions({
-            ...rolePermissions,
-            [roleId]: permissionIds
-        });
-    };
-
-    // Обработчики для конфликтов ролей
-    const handleAddConflict = (roleId1, roleId2, conflictType) => {
-        setRoleConflictMatrix({
-            ...roleConflictMatrix,
-            [roleId1]: {
-                ...roleConflictMatrix[roleId1],
-                [roleId2]: conflictType
-            },
-            [roleId2]: {
-                ...roleConflictMatrix[roleId2],
-                [roleId1]: conflictType
-            }
-        });
-    };
-
-    const handleRemoveConflict = (roleId1, roleId2) => {
-        const newMatrix = { ...roleConflictMatrix };
-        delete newMatrix[roleId1][roleId2];
-        delete newMatrix[roleId2][roleId1];
-        setRoleConflictMatrix(newMatrix);
-    };
-
-    const handleToggleConflict = (roleId1, roleId2) => {
-        const newMatrix = { ...roleConflictMatrix };
-        newMatrix[roleId1][roleId2] = newMatrix[roleId1][roleId2] === '+' ? '-' : '+';
-        newMatrix[roleId2][roleId1] = newMatrix[roleId2][roleId1] === '+' ? '-' : '+';
-        setRoleConflictMatrix(newMatrix);
-    };
-
     const handleToggleRolePermission = (roleId, permissionId) => {
+        const role = roles.find(r => r.id === roleId);
+        const permission = permissions.find(p => p.id === permissionId);
         const newRolePermissions = { ...rolePermissions };
         if (newRolePermissions[roleId] && newRolePermissions[roleId].includes(permissionId)) {
             newRolePermissions[roleId] = newRolePermissions[roleId].filter(id => id !== permissionId);
+            addEvent('permission_remove', `Удалено полномочие "${permission?.name}" у роли "${role?.name}"`, {
+                role: role?.name,
+                permission: permission?.name
+            });
         } else {
             newRolePermissions[roleId] = [...(newRolePermissions[roleId] || []), permissionId];
+            addEvent('permission_add', `Добавлено полномочие "${permission?.name}" к роли "${role?.name}"`, {
+                role: role?.name,
+                permission: permission?.name
+            });
         }
         setRolePermissions(newRolePermissions);
     };
 
+    // Обработчики для сохранения изменений матриц
+    const handleSavePermissionsMatrix = (newRolePermissions) => {
+        setRolePermissions(newRolePermissions);
+        addEvent('permissions_matrix_save', 'Сохранены изменения в матрице полномочий', {
+            changes: newRolePermissions
+        });
+    };
+
+    const handleSaveConflictsMatrix = (newConflictMatrix) => {
+        setRoleConflictMatrix(newConflictMatrix);
+        addEvent('conflicts_matrix_save', 'Сохранены изменения в матрице конфликтов', {
+            changes: newConflictMatrix
+        });
+    };
+
+    const handleSavePositionRolesMatrix = (newPositionRoles) => {
+        setPositionRoleMap(newPositionRoles);
+        addEvent('position_roles_matrix_save', 'Сохранены изменения в матрице должностей и ролей', {
+            changes: newPositionRoles
+        });
+    };
+
+    // Обработчик для переключения конфликтов (используется в матрице конфликтов)
+    const handleToggleConflict = (roleId1, roleId2) => {
+        const role1 = roles.find(r => r.id === roleId1);
+        const role2 = roles.find(r => r.id === roleId2);
+        const newMatrix = { ...roleConflictMatrix };
+        const newValue = newMatrix[roleId1][roleId2] === '+' ? '-' : '+';
+        newMatrix[roleId1][roleId2] = newValue;
+        newMatrix[roleId2][roleId1] = newValue;
+        setRoleConflictMatrix(newMatrix);
+        addEvent('conflict_toggle', `Изменен конфликт между ролями: ${role1?.name} и ${role2?.name}`, {
+            role1: role1?.name,
+            role2: role2?.name,
+            newValue
+        });
+    };
+
+    const handleLogin = (user) => {
+        setCurrentUser(user);
+        setActiveTab('users');
+        addEvent('login', `Вход в систему: ${user.username}`, user);
+    };
+    
+    const handleLogout = () => {
+        const username = currentUser?.username;
+        addEvent('logout', `Выход из системы: ${username}`, { username });
+    };
+    
+    const handleAccountClick = () => {
+        console.log('Переход на вкладку аккаунта отключен');
+    };
+
     return (
-        <div className="container mt-4">
-            <h3 className="mb-4">Управление доступом к ресурсам</h3>
-            <ul className="nav nav-tabs mb-4">
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'users' ? ' active' : ''}`} onClick={() => setActiveTab('users')}>Пользователи</button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'accounts' ? ' active' : ''}`} onClick={() => setActiveTab('accounts')}>Учетные записи</button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'roles' ? ' active' : ''}`} onClick={() => setActiveTab('roles')}>Роли и ресурсы</button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'permissions' ? ' active' : ''}`} onClick={() => setActiveTab('permissions')}>Матрица полномочий</button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'positions' ? ' active' : ''}`} onClick={() => setActiveTab('positions')}>Матрица должностей и ролей</button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'conflicts' ? ' active' : ''}`} onClick={() => setActiveTab('conflicts')}>Матрица конфликтов</button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link${activeTab === 'analysis' ? ' active' : ''}`} onClick={() => setActiveTab('analysis')}>Анализ ролевой модели</button>
-                </li>
-            </ul>
-            {activeTab === 'users' && (
-                <UsersTab 
-                    roles={roles}
-                    permissions={permissions}
-                    positionRoleMap={positionRoleMap}
-                    positionList={positionList}
-                    rolePermissions={rolePermissions}
-                    onAddUser={handleAddUser}
-                    users={users}
-                    onDeleteUser={handleDeleteUser}
-                    setUsers={setUsers}
-                />
-            )}
-            {activeTab === 'accounts' && <AccountsTab />}
-            {activeTab === 'roles' && (
-                <RolesTab 
-                    roles={roles}
-                    setRoles={setRoles}
-                    permissions={permissions}
-                    setPermissions={setPermissions}
-                    resources={resources}
-                    setResources={setResources}
-                    positionList={positionList}
-                    setPositionList={setPositionList}
-                />
-            )}
-            {activeTab === 'permissions' && (
-                <PermissionsMatrixTab 
-                    roles={roles}
-                    permissions={permissions}
-                    rolePermissions={rolePermissions}
-                    onToggleRolePermission={handleToggleRolePermission}
-                />
-            )}
-            {activeTab === 'positions' && (
-                <PositionRoleMatrixTab 
-                    roles={roles}
-                    roleConflictMatrix={roleConflictMatrix}
-                />
-            )}
-            {activeTab === 'conflicts' && (
-                <ConflictMatrixTab 
-                    roles={roles}
-                    roleConflictMatrix={roleConflictMatrix}
-                    onToggleConflict={handleToggleConflict}
-                />
-            )}
-            {activeTab === 'analysis' && (
-                <RoleModelAnalysisTab 
-                    users={users}
-                    roles={roles}
-                    roleConflictMatrix={roleConflictMatrix}
-                    positionList={positionList}
-                />
-            )}
+        <div className="container-fluid">
+            <div className="row">
+                <div className="col-12">
+                    <nav className="navbar navbar-expand-lg navbar-light bg-light">
+                        <div className="container-fluid">
+                            <a className="navbar-brand" href="#">Система управления доступом</a>
+                            <AccountHeader currentUser={currentUser} onLogout={handleLogout} />
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            <div className="row mt-3">
+                <div className="col-12">
+                    <ul className="nav nav-tabs">
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'users' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('users')}>
+                                Пользователи
+                            </a>
+                        </li>
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'accounts' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('accounts')}>
+                                Учетные записи
+                            </a>
+                        </li>
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'roles' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('roles')}>
+                                Роли и ресурсы
+                            </a>
+                        </li>
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'permissions' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('permissions')}>
+                                Матрица полномочий
+                            </a>
+                        </li>
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'conflicts' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('conflicts')}>
+                                Матрица конфликтов
+                            </a>
+                        </li>
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'positions' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('positions')}>
+                                Матрица должностей и ролей
+                            </a>
+                        </li>
+                        <li className="nav-item">
+                            <a className={`nav-link ${activeTab === 'history' ? 'active' : ''}`}
+                               href="#" onClick={() => setActiveTab('history')}>
+                                <i className="bi bi-clock-history me-1"></i>
+                                История событий
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div className="row mt-3">
+                <div className="col-12">
+                    {activeTab === 'users' && <UsersTab 
+                        roles={roles}
+                        permissions={permissions}
+                        positionRoleMap={positionRoleMap}
+                        positionList={positionList}
+                        rolePermissions={rolePermissions}
+                        onAddUser={handleAddUser}
+                        users={users}
+                        onDeleteUser={handleDeleteUser}
+                        setUsers={setUsers}
+                        onEditUser={handleEditUser}
+                    />}
+                    {activeTab === 'accounts' && <AccountsTab />}
+                    {activeTab === 'roles' && <RolesTab 
+                        roles={roles}
+                        setRoles={setRoles}
+                        permissions={permissions}
+                        setPermissions={setPermissions}
+                        resources={resources}
+                        setResources={setResources}
+                        positionList={positionList}
+                        setPositionList={setPositionList}
+                    />}
+                    {activeTab === 'permissions' && <PermissionsMatrixTab 
+                        roles={roles}
+                        permissions={permissions}
+                        rolePermissions={rolePermissions}
+                        onToggleRolePermission={handleToggleRolePermission}
+                        onSavePermissions={handleSavePermissionsMatrix}
+                    />}
+                    {activeTab === 'positions' && <PositionRoleMatrixTab 
+                        roles={roles}
+                        roleConflictMatrix={roleConflictMatrix}
+                        onSavePositionRoles={handleSavePositionRolesMatrix}
+                    />}
+                    {activeTab === 'conflicts' && <ConflictMatrixTab 
+                        roles={roles}
+                        roleConflictMatrix={roleConflictMatrix}
+                        onToggleConflict={handleToggleConflict}
+                        onSaveConflicts={handleSaveConflictsMatrix}
+                    />}
+                    {activeTab === 'history' && <EventHistoryTab 
+                        events={events}
+                        onClearHistory={clearHistory}
+                    />}
+                </div>
+            </div>
         </div>
     );
 } 

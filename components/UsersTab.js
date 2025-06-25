@@ -13,7 +13,7 @@ function UsersTab({ users, roles, onAddUser, onEditUser, onDeleteUser }) {
   };
 
   const handleEdit = (user) => {
-    setEditingUser(user);
+    setEditingUser({ ...user });
   };
 
   const handleSaveEdit = (e) => {
@@ -126,12 +126,14 @@ function UsersTab({ users, roles, onAddUser, onEditUser, onDeleteUser }) {
                       <div className="btn-group">
                         <button
                           className="btn btn-primary btn-sm"
+                          style={{ cursor: 'pointer' }}
                           onClick={() => handleEdit(user)}
                         >
                           Редактировать
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
+                          style={{ cursor: 'pointer' }}
                           onClick={() => onDeleteUser(user.id)}
                         >
                           Удалить
